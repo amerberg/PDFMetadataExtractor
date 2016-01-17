@@ -1,0 +1,9 @@
+db_backend: mysql+mysqlconnector
+db_username: root
+db_password: root
+db_server: localhost
+db_port: 3306
+db_name: picnic
+
+pdf_directory: pdf
+marked_pdf_directory: marked_pdf
