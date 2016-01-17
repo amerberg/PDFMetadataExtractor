@@ -43,7 +43,7 @@ def extract_pdf_text(filename, directory, session):
             for i, page in enumerate(PDFPage.create_pages(pdf)):
                 interpreter.process_page(page)
                 layout = device.get_result()
-                boxes = [obj for obj in layout if isinstance(obj, LTTextBox)]:
+                boxes = [obj for obj in layout if isinstance(obj, LTTextBox)]
                 for b in boxes:
                     block = Block(document=document, page=i,
                                   x0=b.bbox[0], y0=b.bbox[1],
@@ -51,7 +51,7 @@ def extract_pdf_text(filename, directory, session):
                     session.add(block)
                     session.commit()
                     lines = [obj for obj in b
-                              if isinstance(obj, LTTextLine)]:
+                              if isinstance(obj, LTTextLine)]
                     for l in lines:
                         line = Line(block=block,
                                       x0=l.bbox[0], y0=l.bbox[1],
