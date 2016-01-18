@@ -12,7 +12,3 @@ def load_settings(filename=None):
 
     with open(filename, "r") as f:
         return load(f)
-
-
-
-
