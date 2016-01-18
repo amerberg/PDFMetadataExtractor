@@ -1,5 +1,7 @@
 from settings import load_settings, default_settings_file
 from argparse import ArgumentParser
+from re import sub
+
 import db
 from schema import *
 
@@ -10,7 +12,7 @@ from pdfminer.pdfdocument import PDFDocument
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.converter import PDFPageAggregator
-from pdfminer.layout import LAParams, LTTextBox, LTTextLine
+from pdfminer.layout import LAParams, LTTextBox, LTTextLine, LTChar
 
 
 def to_bytestring(s, enc='utf-8'):
@@ -32,8 +34,6 @@ def extract_pdf_text(filename, directory, session):
 
             document = Document(filename=filename)
             session.add(document)
-            session.commit()
-
 
             rsrcmgr = PDFResourceManager()
             laparams = LAParams()
@@ -49,16 +49,30 @@ def extract_pdf_text(filename, directory, session):
                                   x0=b.bbox[0], y0=b.bbox[1],
                                   x1=b.bbox[2], y1=b.bbox[3])
                     session.add(block)
-                    session.commit()
                     lines = [obj for obj in b
                               if isinstance(obj, LTTextLine)]
                     for l in lines:
+                        text = sub(r'\(cid:\d+\)', l.get_text())
                         line = Line(block=block,
-                                      x0=l.bbox[0], y0=l.bbox[1],
-                                      x1=l.bbox[2], y1=l.bbox[3],
-                                      content=l.get_text())
+                                    x0=l.bbox[0], y0=l.bbox[1],
+                                    x1=l.bbox[2], y1=l.bbox[3],
+                                    text=text)
                         session.add(line)
-                    session.commit()
+
+                        chars = [obj for obj in l
+                                 if isinstance(obj, LTChar)]
+                        for c in chars:
+                            value = c.get_text().encode('utf-8')
+                            if len(value) == 1:
+                                char = Char(line=line,
+                                            x0=c.bbox[0], y0=c.bbox[1],
+                                            x1=c.bbox[2], y1=c.bbox[3],
+                                            character=value)
+                                session.add(char)
+
+            # do the whole file on one transaction so we can restart
+            # easily if necessary
+            session.commit()
     except Exception as e:
         print(e)
 

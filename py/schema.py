@@ -39,12 +39,27 @@ class Line(Base):
     id = Column(Integer, primary_key=True)
     block_id = Column(Integer, ForeignKey('block.id'))
     block = relationship("Block", back_populates="lines")
+    chars = relationship("Char", back_populates="line")
     # Positional information
     x0 = Column(Float)
     y0 = Column(Float)
     x1 = Column(Float)
     y1 = Column(Float)
-    content = Column(String(200))
+    text = Column(String(200))
+
+
+ class Char(Base):
+     __tablename__ = 'char'
+
+     id = Column(Integer, primary_key=True)
+     line_id = Column(Integer, ForeignKey('line.id'))
+     line = relationship("Line", back_populates="chars")
+     # Positional information
+     x0 = Column(Float)
+     y0 = Column(Float)
+     x1 = Column(Float)
+     y1 = Column(Float)
+     character = Column(String(1))
 
 
 def install_schema(engine):
