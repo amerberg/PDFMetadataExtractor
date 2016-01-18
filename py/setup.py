@@ -13,6 +13,7 @@ from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.converter import PDFPageAggregator
 from pdfminer.layout import LAParams, LTTextBox, LTTextLine
+from pdfminer.layout import LTTextLineVertical, LTTextBoxVertical
 
 
 def extract_pdf_text(filename, directory, session):
@@ -35,19 +36,21 @@ def extract_pdf_text(filename, directory, session):
                 layout = device.get_result()
                 boxes = [obj for obj in layout if isinstance(obj, LTTextBox)]
                 for b in boxes:
-                    block = Block(document=document, page=i,
+                    box = Box(document=document, page=i,
                                   x0=b.bbox[0], y0=b.bbox[1],
-                                  x1=b.bbox[2], y1=b.bbox[3])
-                    session.add(block)
+                                  x1=b.bbox[2], y1=b.bbox[3],
+                                  vertical=isinstance(b, LTTextBoxVertical))
+                    session.add(box)
                     lines = [obj for obj in b
                              if isinstance(obj, LTTextLine)]
                     for l in lines:
                         text = sub(r'\(cid:\d+\)', "", l.get_text()).strip()
                         if len(text) > 0:
-                            line = Line(block=block,
+                            vertical = isinstance(l, LTTextLineVertical)
+                            line = Line(box=box, document=document,
                                         x0=l.bbox[0], y0=l.bbox[1],
                                         x1=l.bbox[2], y1=l.bbox[3],
-                                        text=text)
+                                        text=text, vertical=vertical)
                             session.add(line)
 
             # do the whole file on one transaction so we can restart
