@@ -7,7 +7,7 @@ from schema import *
 
 # PDFMiner includes
 import os
-from pdfminer.pdfparser import PDFParser, PDFSyntaxError
+from pdfminer.pdfparser import PDFParser
 from pdfminer.pdfdocument import PDFDocument
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
@@ -40,7 +40,7 @@ def extract_pdf_text(filename, directory, session):
                                   x1=b.bbox[2], y1=b.bbox[3])
                     session.add(block)
                     lines = [obj for obj in b
-                              if isinstance(obj, LTTextLine)]
+                             if isinstance(obj, LTTextLine)]
                     for l in lines:
                         text = sub(r'\(cid:\d+\)', "", l.get_text()).strip()
                         if len(text) > 0:
@@ -58,12 +58,12 @@ def extract_pdf_text(filename, directory, session):
 
 
 if __name__ == "__main__":
-    argparser = ArgumentParser(description = 'Set up database')
-    argparser.add_argument('--schema', help='install the schema', action='store_true')
-    argparser.add_argument('--settings', help='the path to the settings file',
+    parser = ArgumentParser(description='Set up database')
+    parser.add_argument('--schema', help='install the schema', action='store_true')
+    parser.add_argument('--settings', help='the path to the settings file',
                            default=None)
 
-    args = argparser.parse_args()
+    args = parser.parse_args()
     settings_file = args.settings if args.settings else default_settings_file()
     settings = load_settings(settings_file)
 
