@@ -12,7 +12,7 @@ from pdfminer.pdfdocument import PDFDocument
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.converter import PDFPageAggregator
-from pdfminer.layout import LAParams, LTTextBox, LTTextLine, LTChar
+from pdfminer.layout import LAParams, LTTextBox, LTTextLine,
 
 
 def to_bytestring(s, enc='utf-8'):
@@ -58,17 +58,6 @@ def extract_pdf_text(filename, directory, session):
                                     x1=l.bbox[2], y1=l.bbox[3],
                                     text=text)
                         session.add(line)
-
-                        chars = [obj for obj in l
-                                 if isinstance(obj, LTChar)]
-                        for c in chars:
-                            value = c.get_text().encode('utf-8')
-                            if len(value) == 1:
-                                char = Char(line=line,
-                                            x0=c.bbox[0], y0=c.bbox[1],
-                                            x1=c.bbox[2], y1=c.bbox[3],
-                                            character=value)
-                                session.add(char)
 
             # do the whole file on one transaction so we can restart
             # easily if necessary
