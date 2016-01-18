@@ -1,6 +1,7 @@
 from settings import load_settings, default_settings_file
 from argparse import ArgumentParser
 from re import sub
+import q
 
 import db
 from schema import *
@@ -13,16 +14,6 @@ from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.converter import PDFPageAggregator
 from pdfminer.layout import LAParams, LTTextBox, LTTextLine
-
-
-def to_bytestring(s, enc='utf-8'):
-    """Convert the given unicode string to a bytestring, using the standard encoding,
-    unless it's already a bytestring"""
-    if s:
-        if isinstance(s, str):
-            return s
-        else:
-            return s.encode(enc)
 
 
 def extract_pdf_text(filename, directory, session):
@@ -52,7 +43,7 @@ def extract_pdf_text(filename, directory, session):
                     lines = [obj for obj in b
                               if isinstance(obj, LTTextLine)]
                     for l in lines:
-                        text = sub(r'\(cid:\d+\)', l.get_text(), '')
+                        text = sub(r'\(cid:\d+\)', "", l.get_text()).strip()
                         line = Line(block=block,
                                     x0=l.bbox[0], y0=l.bbox[1],
                                     x1=l.bbox[2], y1=l.bbox[3],
