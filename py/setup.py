@@ -12,7 +12,7 @@ from pdfminer.pdfdocument import PDFDocument
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.converter import PDFPageAggregator
-from pdfminer.layout import LAParams, LTTextBox, LTTextLine,
+from pdfminer.layout import LAParams, LTTextBox, LTTextLine
 
 
 def to_bytestring(s, enc='utf-8'):
@@ -52,7 +52,7 @@ def extract_pdf_text(filename, directory, session):
                     lines = [obj for obj in b
                               if isinstance(obj, LTTextLine)]
                     for l in lines:
-                        text = sub(r'\(cid:\d+\)', l.get_text())
+                        text = sub(r'\(cid:\d+\)', l.get_text(), '')
                         line = Line(block=block,
                                     x0=l.bbox[0], y0=l.bbox[1],
                                     x1=l.bbox[2], y1=l.bbox[3],
