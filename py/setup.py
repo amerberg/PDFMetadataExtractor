@@ -1,7 +1,6 @@
 from settings import load_settings, default_settings_file
 from argparse import ArgumentParser
 from re import sub
-import q
 
 import db
 from schema import *
