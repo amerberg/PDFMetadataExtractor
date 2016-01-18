@@ -43,11 +43,12 @@ def extract_pdf_text(filename, directory, session):
                               if isinstance(obj, LTTextLine)]
                     for l in lines:
                         text = sub(r'\(cid:\d+\)', "", l.get_text()).strip()
-                        line = Line(block=block,
-                                    x0=l.bbox[0], y0=l.bbox[1],
-                                    x1=l.bbox[2], y1=l.bbox[3],
-                                    text=text)
-                        session.add(line)
+                        if len(text) > 0:
+                            line = Line(block=block,
+                                        x0=l.bbox[0], y0=l.bbox[1],
+                                        x1=l.bbox[2], y1=l.bbox[3],
+                                        text=text)
+                            session.add(line)
 
             # do the whole file on one transaction so we can restart
             # easily if necessary
