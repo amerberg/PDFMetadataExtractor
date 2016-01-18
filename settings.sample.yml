@@ -1,0 +1,30 @@
+db_backend: mysql+mysqlconnector
+db_username: root
+db_password: root
+db_server: localhost
+db_port: 3306
+db_name: metadata
+
+pdf_directory: pdf
+marked_pdf_directory: marked_pdf
+
+substitutions:
+  a: [e, o, s]
+  b: [h, lo, la]
+  d: [ol, al, oi, ai]
+  e: [a, o, s]
+  h: [b]
+  i: [l, 1]
+  l: [i, I, 1]
+  o: [a, e, s, O, 0]
+  s: [a, e, g, o]
+
+  C: [G]
+  F: [P]
+  G: [C]
+  M: [IVI]
+  O: [0, o]
+  P: [F]
+    
+  
+
