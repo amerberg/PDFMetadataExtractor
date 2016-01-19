@@ -50,7 +50,7 @@ def extract_pdf_text(filename, directory, session):
                             line = Line(box=box, document=document,
                                         x0=l.bbox[0], y0=l.bbox[1],
                                         x1=l.bbox[2], y1=l.bbox[3],
-                                        text=text, vertical=vertical)
+                                        text=text, vertical=vertical, page=i)
                             session.add(line)
 
             # do the whole file on one transaction so we can restart

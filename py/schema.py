@@ -43,6 +43,7 @@ class Line(Base):
     document_id = Column(Integer, ForeignKey('document.id'))
     document = relationship('Document', back_populates='lines')
     # Positional information
+    page = Column(Integer)
     x0 = Column(Float)
     y0 = Column(Float)
     x1 = Column(Float)
