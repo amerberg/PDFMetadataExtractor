@@ -17,7 +17,9 @@ substitutions:
   i: [l, 1]
   l: [i, I, 1]
   o: [a, e, s, O, 0]
-  s: [a, e, g, o]
+  s: [a, e, g, o, S]
+  v: [y]
+  w: [vv, vy, yy, yv, W]
 
   C: [G]
   F: [P]
@@ -25,6 +27,13 @@ substitutions:
   M: [IVI]
   O: [0, o]
   P: [F]
+  S: [s]
+  W: [w, VV]
     
-  
-
+fields:
+  patient_name:
+    type: name
+    labels: [Patient Name, Patient name, Patient]
+  date_of_birth:
+    type: date
+    labels: [Date of Birth, Date of birth, DOB, D.O.B.]
