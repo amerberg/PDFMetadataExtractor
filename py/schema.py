@@ -11,7 +11,7 @@ class Document(Base):
     __tablename__ = 'document'
 
     id = Column(Integer, primary_key=True)
-    filename = Column(String(100), unique=True)
+    filename = Column(String(255), unique=True)
     num_pages = Column(Integer)
     boxes = relationship('Box', back_populates='document')
     lines = relationship('Line', back_populates='document')
@@ -50,7 +50,7 @@ class Line(Base):
     y1 = Column(Float)
     vertical = Column(Boolean)
     # Content of the line
-    text = Column(String(200))
+    text = Column(String(1023))
 
 
 def install_schema(engine):
