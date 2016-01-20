@@ -23,15 +23,18 @@ def extract_pdf_text(filename, directory, session):
             pdf = PDFDocument(parser)
             parser.set_document(pdf)
 
-            document = Document(filename=filename)
-            session.add(document)
-
             rsrcmgr = PDFResourceManager()
             laparams = LAParams()
             device = PDFPageAggregator(rsrcmgr, laparams=laparams)
             interpreter = PDFPageInterpreter(rsrcmgr, device)
 
-            for i, page in enumerate(PDFPage.create_pages(pdf)):
+            pages = PDFPage.create_pages(pdf)
+            document = Document(filename=filename)
+            session.add(document)
+
+            for i, page in enumerate(pages):
+                # TODO: figure out how to get the number of pages directly from pages
+                document.num_pages = i+1
                 interpreter.process_page(page)
                 layout = device.get_result()
                 boxes = [obj for obj in layout if isinstance(obj, LTTextBox)]
@@ -57,7 +60,7 @@ def extract_pdf_text(filename, directory, session):
             # easily if necessary
             session.commit()
     except Exception as e:
-        print(e)
+        print(filename, e)
 
 
 if __name__ == "__main__":
@@ -79,5 +82,10 @@ if __name__ == "__main__":
         if not os.path.isabs(pdf_dir):
             pdf_dir = os.path.join(os.path.split(settings_file)[0],
                                    pdf_dir)
-        for filename in os.listdir(pdf_dir):
-            extract_pdf_text(filename, pdf_dir, session)
+            filenames = os.listdir(pdf_dir)
+
+        existing = [fn[0] for fn in session.query(Document.filename)]
+
+        for filename in filenames:
+            if filename not in existing:
+                extract_pdf_text(filename, pdf_dir, session)
