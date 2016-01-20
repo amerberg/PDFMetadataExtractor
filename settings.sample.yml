@@ -29,11 +29,22 @@ substitutions:
   P: [F]
   S: [s]
   W: [w, VV]
-    
+  ' ': ['  ', '   ']
+
 fields:
   patient_name:
     type: name
     labels: [Patient Name, Patient name, Patient]
+    patterns: ['[A-Za-z01\-\s,]+']
+    multiple: False
   date_of_birth:
     type: date
     labels: [Date of Birth, Date of birth, DOB, D.O.B.]
+    patterns: ['[01]?\d[/1][0-3]?\d[/1]\d{4}']
+    multiple: False
+
+ignore_fields:
+  sex:
+    labels: ['Sex']
+  mrn:
+    labels: ['MRN', 'Medical Record Number']
