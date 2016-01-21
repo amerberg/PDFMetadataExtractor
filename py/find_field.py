@@ -40,19 +40,6 @@ class PatternBuilder(object):
                 for label in labels])
             return self._field_patterns[key]
 
-# def build_label_pattern(label, substitutions):
-#     return "".join([c if c not in substitutions
-#                     else build_character_pattern(c, substitutions[c])
-#                     for c in label])
-#
-#
-# def build_field_pattern(field, substitutions):
-#     if "labels" not in field:
-#         return ""
-#     labels = field['labels'] + [label for label in field['labels']]
-#     return "|".join(["(?:" + build_label_pattern(label, substitutions) + ")"
-#                      for label in labels])
-
 
 def find_field_label(field, document, page, pattern_builder):
     pattern = pattern_builder.field_pattern(field)
