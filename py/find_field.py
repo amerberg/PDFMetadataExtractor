@@ -1,26 +1,61 @@
 from re import search
 
+class PatternBuilder(object):
+    def __init__(self, substitutions):
+        self._substitutions = substitutions
+        self._char_patterns = {}
+        self._label_patterns = {}
+        self._field_patterns = {}
 
-def build_character_pattern(character, substitutions):
-    strings = [str(c) for c in (substitutions + [character])]
-    return "(?:" + "|".join([s if len(s)== 1 else "(?:" + s + ")"
-                     for s in strings]) + ")"
+    def character_pattern(self, character):
+        try:
+            return self._char_patterns[character]
+        except KeyError:
+            substitutions = self._substitutions[character]
+            strings = [str(c) for c in (substitutions + [character])]
+            self._char_patterns[character] = "(?:" + "|".join(
+                [s if len(s)== 1 else "(?:" + s + ")" for s in strings]) + ")"
+            return self._char_patterns[character]
 
-
-def build_label_pattern(label, substitutions):
-    return "".join([c if c not in substitutions
-                    else build_character_pattern(c, substitutions[c])
+    def label_pattern(self, label):
+        try:
+            return self._label_patterns[label]
+        except KeyError:
+            substitutions = self._substitutions
+            self._label_patterns[label] = "".join([c if c not in substitutions
+                    else self.character_pattern(c)
                     for c in label])
+            return self._label_patterns[label]
+
+    def field_pattern(self, field):
+        if 'labels' not in field:
+            return None
+
+        try:
+            key = "$".join(field['labels'])
+            return self._field_patterns[key]
+        except KeyError:
+            labels = field['labels'] + [label for label in field['labels']]
+            self._field_patterns[key] = "|".join(["(?:" + self.label_pattern(label) + ")"
+                for label in labels])
+            return self._field_patterns[key]
+
+# def build_label_pattern(label, substitutions):
+#     return "".join([c if c not in substitutions
+#                     else build_character_pattern(c, substitutions[c])
+#                     for c in label])
+#
+#
+# def build_field_pattern(field, substitutions):
+#     if "labels" not in field:
+#         return ""
+#     labels = field['labels'] + [label for label in field['labels']]
+#     return "|".join(["(?:" + build_label_pattern(label, substitutions) + ")"
+#                      for label in labels])
 
 
-def build_field_pattern(field, substitutions):
-    labels = field['labels'] + [label.upper() for label in field['labels']]
-    return "|".join(["(?:" + build_label_pattern(label, substitutions) + ")"
-                     for label in labels])
-
-
-def find_field_label(field, document, page, substitutions):
-    pattern = build_field_pattern(field, substitutions)
+def find_field_label(field, document, page, pattern_builder):
+    pattern = pattern_builder.field_pattern(field)
     lines = [line for line in document.lines if line.page == page]
 
     for line in lines:
@@ -57,13 +92,13 @@ def find_next_lines(line):
     return next_horizontal, next_vertical
 
 
-def suggest_field_by_label(field, document, page, substitutions, all_fields):
-    for line, span in find_field_label(field, document, page, substitutions):
+def suggest_field_by_label(field, document, page, pattern_builder, all_fields):
+    for line, span in find_field_label(field, document, page, pattern_builder):
         next_horizontal, next_vertical = find_next_lines(line)
         line_continuation = next_horizontal.text if next_horizontal else ""
         h_text = " ".join([line.text[span[1]:], line_continuation])
-        h_text = strip_labels(h_text, all_fields, substitutions)
-        v_text = strip_labels(next_vertical.text, all_fields, substitutions) if next_vertical else ""
+        h_text = strip_labels(h_text, all_fields, pattern_builder)
+        v_text = strip_labels(next_vertical.text, all_fields, pattern_builder) if next_vertical else ""
         for pattern in field['patterns']:
             h_match = search(pattern, h_text)
             if h_match:
@@ -73,9 +108,11 @@ def suggest_field_by_label(field, document, page, substitutions, all_fields):
                 yield v_match.group(0).strip()
 
 
-def strip_labels(text, all_fields, substitutions):
+def strip_labels(text, all_fields, pattern_builder):
     for field in all_fields:
-        pattern = build_field_pattern(all_fields[field], substitutions)
+        pattern = pattern_builder.field_pattern(all_fields[field])
+        if pattern is None:
+            continue
         try:
             start = search(pattern, text).start(0)
             text = text[:start]
@@ -85,11 +122,11 @@ def strip_labels(text, all_fields, substitutions):
     return text
 
 
-def get_field_value_by_label(field, document, page, substitutions, all_fields):
+def get_field_value_by_label(field, document, page, pattern_builder, all_fields):
     "Get all suggestions for a field, and choose a single one"
     # TODO: find a way to reconcile different suggestions. for now, just return the first one
     for suggestion in suggest_field_by_label(field, document, page,
-                                             substitutions, all_fields):
+                                             pattern_builder, all_fields):
         return suggestion
 
     return None
