@@ -29,7 +29,8 @@ def extract_pdf_text(filename, directory, session):
             interpreter = PDFPageInterpreter(rsrcmgr, device)
 
             pages = PDFPage.create_pages(pdf)
-            document = Document(filename=filename)
+            document = Document()
+            document.filename = filename
             session.add(document)
 
             for i, page in enumerate(pages):
@@ -74,8 +75,9 @@ if __name__ == "__main__":
     settings = load_settings(settings_file)
 
     if args.schema:
-        install_schema(db.engine(settings))
+        install_schema(db.engine(settings), settings['fields'])
     else:
+        map_tables(settings['fields'])
         Session = db.session(settings)
         session = Session()
         pdf_dir = settings['pdf_directory']
