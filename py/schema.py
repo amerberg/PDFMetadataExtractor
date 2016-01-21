@@ -1,6 +1,7 @@
 from sqlalchemy import Column, ForeignKey, Table, MetaData
-from sqlalchemy import Integer, String, Float, Boolean, Date
+from sqlalchemy import Integer, String, Float, Boolean
 from sqlalchemy.orm import relationship, mapper
+from field_types import *
 
 # TODO: allow configuration of string lengths
 class Document(object):
@@ -33,13 +34,6 @@ class Line(object):
         self.vertical = kwargs['vertical']
         self.text = kwargs['text']
 
-
-
-def col_type(field):
-    if field['type'] == 'name':
-        return String(255)
-    elif field['type'] == 'date':
-        return Date
 
 def document_table(fields, metadata):
     return Table('document', metadata,
