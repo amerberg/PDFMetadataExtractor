@@ -55,7 +55,7 @@ def find_next_lines(line):
     "Find lines following the given one, either vertically or horizontally"
     next_horizontal, next_vertical = None, None
     candidates = [candidate for candidate in line.document.lines
-                  if candidate.page==line.page and candidate.id != line.id]
+                  if candidate.page == line.page and candidate.id != line.id]
     for candidate in candidates:
         # TODO account for possible page slant
         # Check for horizontal overlap
