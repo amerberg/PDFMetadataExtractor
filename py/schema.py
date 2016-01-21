@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship, mapper
 class Document(object):
     def __init__(self, filename='', num_pages=1):
         self.filename=filename
-        self.num_pages=num_page
+        self.num_pages=num_pages
 
 
 class Box(object):

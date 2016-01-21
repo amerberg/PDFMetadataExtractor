@@ -1,4 +1,4 @@
-from settings import load_settings, default_settings_file
+from settings import load_settings, default_settings_file, load_labels
 from argparse import ArgumentParser
 from re import sub
 
@@ -16,7 +16,7 @@ from pdfminer.layout import LAParams, LTTextBox, LTTextLine
 from pdfminer.layout import LTTextLineVertical, LTTextBoxVertical
 
 
-def extract_pdf_text(filename, directory, session):
+def store_pdf_data(filename, directory, session, labels):
     try:
         with open(os.path.join(directory, filename)) as fp:
             parser = PDFParser(fp)
@@ -29,8 +29,9 @@ def extract_pdf_text(filename, directory, session):
             interpreter = PDFPageInterpreter(rsrcmgr, device)
 
             pages = PDFPage.create_pages(pdf)
-            document = Document()
-            document.filename = filename
+            document = Document(filename=filename)
+            for key in labels:
+                setattr(document, key, labels[key])
             session.add(document)
 
             for i, page in enumerate(pages):
@@ -41,9 +42,9 @@ def extract_pdf_text(filename, directory, session):
                 boxes = [obj for obj in layout if isinstance(obj, LTTextBox)]
                 for b in boxes:
                     box = Box(document=document, page=i,
-                                  x0=b.bbox[0], y0=b.bbox[1],
-                                  x1=b.bbox[2], y1=b.bbox[3],
-                                  vertical=isinstance(b, LTTextBoxVertical))
+                              x0=b.bbox[0], y0=b.bbox[1],
+                              x1=b.bbox[2], y1=b.bbox[3],
+                              vertical=isinstance(b, LTTextBoxVertical))
                     session.add(box)
                     lines = [obj for obj in b
                              if isinstance(obj, LTTextLine)]
@@ -81,13 +82,21 @@ if __name__ == "__main__":
         Session = db.session(settings)
         session = Session()
         pdf_dir = settings['pdf_directory']
+        label_file = settings['label_file']
+
         if not os.path.isabs(pdf_dir):
             pdf_dir = os.path.join(os.path.split(settings_file)[0],
                                    pdf_dir)
-            filenames = os.listdir(pdf_dir)
+        filenames = os.listdir(pdf_dir)
+
+        if not os.path.isabs(label_file):
+            label_file = os.path.join(os.path.split(settings_file)[0],
+                                      label_file)
 
         existing = [fn[0] for fn in session.query(Document.filename)]
+        labels = load_labels(label_file)
 
         for filename in filenames:
             if filename not in existing:
-                extract_pdf_text(filename, pdf_dir, session)
+                file_labels = labels[filename] if filename in labels else {}
+                store_pdf_data(filename, pdf_dir, session, file_labels)
