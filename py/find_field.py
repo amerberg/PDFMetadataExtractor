@@ -1,7 +1,7 @@
 from re import search
 from field_types import get_handler
 
-import q
+import itertools
 
 class PatternBuilder(object):
     def __init__(self, substitutions):
@@ -39,10 +39,34 @@ class PatternBuilder(object):
             key = "$".join(field['labels'])
             return self._field_patterns[key]
         except KeyError:
-            labels = field['labels'] + [label for label in field['labels']]
+            labels = set(field['labels'] + [label.upper() for label in field['labels']])
             self._field_patterns[key] = "|".join(["(?:" + self.label_pattern(label) + ")"
                 for label in labels])
             return self._field_patterns[key]
+
+
+class Candidate(object):
+    def __init__(self, line, field, match_text, label_line):
+        self._line = line
+        self._field = field
+        self._match_text = match_text
+        self._label_line = label_line
+        self._handler = get_handler(field['type'])
+        self._formatted = self._handler.format(match_text)
+        self._id = "line_"
+
+        try:
+            self._label_alignment = (label_line.y0 - line.y0) - (label_line.x0 - line.x0)
+        except AttributeError:
+            #in case there is no label TODO: think about this more
+            pass
+
+    def formatted(self):
+        return self._formatted
+
+    def identifier(self):
+        return self._id
+
 
 
 def find_field_label(field, document, page, pattern_builder):
@@ -83,8 +107,13 @@ def find_next_lines(line):
 
     return next_horizontal, next_vertical
 
+def suggest_field_by_label(field, document, pattern_builder, all_fields):
+    by_page = [_suggest_field_by_label_page(field, document, page,
+                                            pattern_builder, all_fields)
+               for page in range(document.num_pages)]
+    return itertools.chain(*by_page)
 
-def suggest_field_by_label(field, document, page, pattern_builder, all_fields):
+def _suggest_field_by_label_page(field, document, page, pattern_builder, all_fields):
     results = [r for r in find_field_label(field, document, page, pattern_builder)]
     results.sort(key=lambda x: x[1][0]-x[1][1])
     for line, span in results:
@@ -104,11 +133,10 @@ def suggest_field_by_label(field, document, page, pattern_builder, all_fields):
         v_match = [handler.find_value(text) for text in v_pre]
 
         for match in h_match:
-            if match:
-                yield (match, h_line)
+            yield Candidate(h_line, field, match, line)
+
         for match in v_match:
-            if match:
-                yield (match, next_vertical)
+            yield Candidate(next_vertical, field, match, line)
 
 def strip_labels(text, all_fields, pattern_builder):
     for field in all_fields:
@@ -119,18 +147,8 @@ def strip_labels(text, all_fields, pattern_builder):
             # TODO: consider possibility of multiple matches...
             match = search(pattern, text)
             # TODO: do something less clumsy than joining on newlines...
-            text = "\n".join([text[:match.start(0)], text[match.end(0)]])
+            text = "\n".join([text[:match.start(0)], text[match.end(0):]])
         except AttributeError:
             # search returned None
             pass
     return text.split("\n")
-
-
-def get_field_value_by_label(field, document, page, pattern_builder, all_fields):
-    "Get all suggestions for a field, and choose a single one"
-    # TODO: find a way to reconcile different suggestions. for now, just return the first one
-    for suggestion, _ in suggest_field_by_label(field, document, page,
-                                             pattern_builder, all_fields):
-        return suggestion
-
-    return None

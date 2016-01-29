@@ -51,32 +51,19 @@ if __name__ == '__main__':
 
         scores = {}
         sym_scores = {}
-        norm_scores = {}
-        snorm_scores = {}
-        start = time.time()
         col_name = field_name + "_score"
         query = session.query(Document).options(joinedload(Document.lines)).\
             filter(Document.is_test == 0)
         for document in query.all():
             value = getattr(document, field_name)
-            doc_scores = {'line_' + str(line.id):
+            row_key = 'line_%d' % line.id
+            doc_scores = {row_key:
                         handler.match_score(value, line.text) for line in document.get_lines()}
-            doc_sym_scores = {'line_' + str(line.id):
+            doc_sym_scores = {row_key:
                         handler.compare(value, line.text) for line in document.get_lines()}
             scores.update(doc_scores)
             sym_scores.update(doc_sym_scores)
-            try:
-                doc_max = max(doc_scores.values())
-                doc_norm_scores = {k: v / doc_max for k,v in doc_scores.iteritems()}
-                doc_snorm_scores = {k: v / (doc_max**0.5) for k,v in doc_scores.iteritems()}
-            except Exception:
-                doc_norm_scores = {k: 0 for k in doc_scores}
-                doc_snorm_scores = {k: 0 for k in doc_scores}
-            norm_scores.update(doc_norm_scores)
-            snorm_scores.update(doc_norm_scores)
 
-    df = pd.DataFrame({col_name: scores,
-                       'norm_' + col_name: norm_scores,
-                       'snorm_' + col_name: norm_scores,
-                       'sym_' + col_name: sym_scores})
+
+    df = pd.DataFrame({col_name: scores, 'sym_' + col_name: sym_scores})
     df.to_csv(path.join(csv_directory, 'training_scores.csv'), encoding='utf-8')

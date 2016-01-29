@@ -4,8 +4,6 @@ from dateutil.parser import parse
 from datetime import date, datetime
 from fuzzywuzzy import fuzz
 
-import q
-
 def get_handler(type):
     classes = {'human_name' : HumanNameHandler,
                'date' : DateHandler,
@@ -108,7 +106,6 @@ class DateHandler(TypeHandler):
         if not re.search(r"[A-Z][a-z]{2}", value):
             value = re.sub(r"\s+", "", value)
         # Get rid of punctuation noise from scanning
-        q(value)
         return str(value).translate(None, r",.'`")
 
     def match_score(self, query, text):

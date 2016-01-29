@@ -4,21 +4,19 @@ from argparse import ArgumentParser
 from schema import *
 import db
 import pandas as pd
-import numpy as np
 from sqlalchemy.orm import joinedload
 from os import path
+import field_types
 
 class FeatureBuilder(object):
 
-    def __init__(self, fields, dictionary, features=None, box_phrases={}, pattern_builder=None):
+    def __init__(self, fields, dictionary, box_phrases={}, pattern_builder=None):
         self._feature_names = set(sum([fields[f]["features"] for f in fields
-                                 if "features" in fields[f]], [])) if not features else features
+                                 if "features" in fields[f]], []))
         self._dict = dictionary
         self._box_phrases = box_phrases
         self._pattern_builder = pattern_builder
         self._next_temp_id = 1
-
-
 
     def _feature_func(self, name):
         funcs = {'lower_left_x': self.lower_left_x,
@@ -36,7 +34,10 @@ class FeatureBuilder(object):
                  'box_rank': self.box_rank,
                  'dict_word_count': self.dict_word_count,
                  'box_phrases': self.box_phrases,
-                 'contains_colon': self.contains_colon}
+                 'contains_colon': self.contains_colon,
+                 'length': self.length,
+                 'digit_count': self.digit_count,
+                 'alpha_count': self.alpha_count}
         return funcs[name]
 
     def line_features(self, line):
@@ -125,12 +126,19 @@ class FeatureBuilder(object):
     def contains_colon(self, line):
         return int(":" in line.text)
 
+    def length(self, line):
+        return len(line.text)
+
+    def digit_count(self, line):
+        return sum([c.isdigit() for c in line.text])
+
+    def alpha_count(self, line):
+        return sum([c.isalpha() for c in line.text])
 
 if __name__ == '__main__':
     parser = ArgumentParser(description='Compute features for lines')
     parser.add_argument('--settings', help='the path to the settings file',
                         default=None)
-    parser.add_argument('--fix', help='repair a specific feature')
 
     args = parser.parse_args()
     settings_file = args.settings if args.settings else default_settings_file()
@@ -149,45 +157,58 @@ if __name__ == '__main__':
         with open(settings['dictionary'], "r") as f:
             words = f.readlines()
             words = [w.strip() for w in words if w.islower()]
-    except Exception:
+    except KeyError:
         words = []
 
     fields = settings['fields']
-    if args.fix:
-        feature_names = {args.fix}
-    else:
-        feature_names = None
 
     #TODO : make this more generalizable!
-    box_phrase_params = {}
+    box_phrases_params = {}
     for field_name in fields:
         if "box_phrases" in fields[field_name]:
-            box_phrase_params.update(fields[field_name]["box_phrases"])
+            box_phrases_params.update(fields[field_name]["box_phrases"])
 
-    fb = FeatureBuilder(fields, words, feature_names, box_phrase_params, pb)
+    fb = FeatureBuilder(fields, words, box_phrases_params, pb)
+    suggestions = {field_name: set([]) for field_name in fields}
+    for document in session.query(Document).options(joinedload(Document.lines))\
+            .filter(Document.is_test == 0):
+        for field_name, field in settings['fields'].iteritems():
+            if 'disabled' in field and field['disabled']:
+                continue
+            suggest_pairs = suggest_field_by_label(field, document, pb, all_fields)
+            suggestions[field_name].update({line for text, line in suggest_pairs})
 
-    query = session.query(Line).join(Document).\
-        options(joinedload(Line.document, innerjoin=True)).\
-        options(joinedload(Line.box, innerjoin=True)).\
-        filter(Document.is_test == 0)
+    all_suggestions = set().union(*suggestions.values())
 
-    features = fb.features_dataframe(query.all())
+    features = fb.features_dataframe(all_suggestions)
 
-    if not args.fix:
-        for field_name in settings['fields']:
-            field = settings['fields'][field_name]
-            if 'model' in field and field['model']:
-                col_name = 'label_pattern_' + field_name
-                features[col_name] = np.repeat(0, len(features))
-                for document in session.query(Document).filter(Document.is_test == 0).all():
-                    for page in range(document.num_pages):
-                        for _, line in suggest_field_by_label(field, document, page, pb, all_fields):
-                            features[col_name]['line_'+str(line.id)] = 1
+    for field_name, field in fields.iteritems():
 
-    if args.fix:
-        existing = pd.read_csv(path.join(csv_directory, 'training_features.csv'), index_col=0)
-        for feature_name in feature_names:
-            existing[feature_name] = features[feature_name]
-        existing.to_csv(path.join(csv_directory, 'training_features.csv'), encoding='utf-8')
-    else:
-        features.to_csv(path.join(csv_directory, 'training_features.csv'), encoding='utf-8')
+        if "model" not in field:
+            continue
+        columns = field['features']
+        if "model" not in field:
+            continue
+        try:
+            columns.remove('box_phrases')
+            columns += ['box_phrases_%s' % phrase for phrase in field['box_phrases']]
+        except ValueError:
+            pass
+
+        rows = ["line_%d" % line.id for line in suggestions[field_name]]
+        field_features = features.loc[rows, columns].sort_index()
+        field_features.to_csv(path.join(csv_directory, '%s_training_features.csv' % field_name), encoding='utf-8')
+
+        col_name = "%s_score" % field_name
+        handler = field_types.get_handler(field['type'])
+        scores={}
+        sym_scores={}
+        for line in suggestions[field_name]:
+            value = getattr(line.document, field_name)
+            row_key = 'line_%d' % line.id
+            scores[row_key] = handler.match_score(value, line.text)
+            sym_scores[row_key] = handler.compare(value, line.text)
+
+
+        score_df = pd.DataFrame({col_name: scores, 'sym_%s' % col_name: sym_scores}).sort_index()
+        score_df.to_csv(path.join(csv_directory, '%s_training_scores.csv' % field_name), encoding='utf-8')
