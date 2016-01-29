@@ -25,32 +25,30 @@ class MetadataGuesser(object):
                                                             self._pattern_builder,
                                                             self._all_fields)
 
-            texts, line = self.choose_line(suggestions, field_name)
-            for text in texts:
-                formatted = handler.format(text)
-                if formatted:
-                    result[field_name] = formatted
+            candidate = list(self.choose_candidate(suggestions, field_name))
+            try:
+                result[field_name] = candidate.formatted()
+            except AttributeError:
+                result[field_name] = None
 
-        return result
 
-    def choose_line(self, suggestions, field_name):
+    def rank_candidates(self, candidates, field_name):
         field = self._fields[field_name]
         if "model" not in field:
             try:
-                return suggestions.next()
-            except StopIteration:
-                return [], None
+                return candidates[0]
+            except KeyError:
+                return None
         else:
             model = field['model']
             try:
-                matches, lines = zip(*suggestions)
                 fb = line_features.FeatureBuilder(self._fields, self._dictionary,
                                                   field['box_phrases'],
                                                   self._pattern_builder)
-                features = fb.features_dataframe(lines)
+                features = fb.features_dataframe(candidates)
                 scores = model.predict(features)
-                index = scores.argmax()
-                return matches[index], lines[index]
+                index = scores.argsort()
+                return list(np.array(candidates)[so])
             except ValueError:
                 #No suggestions!
-                return [], None
+                return None

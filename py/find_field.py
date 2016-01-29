@@ -46,14 +46,14 @@ class PatternBuilder(object):
 
 
 class Candidate(object):
-    def __init__(self, line, field, match_text, label_line):
+    def __init__(self, line, field, match_text, label_line, num):
         self._line = line
         self._field = field
         self._match_text = match_text
         self._label_line = label_line
         self._handler = get_handler(field['type'])
         self._formatted = self._handler.format(match_text)
-        self._id = "line_"
+        self._id = self._get_id(line, label_line, num)
 
         try:
             self._label_alignment = (label_line.y0 - line.y0) - (label_line.x0 - line.x0)
@@ -64,7 +64,16 @@ class Candidate(object):
     def formatted(self):
         return self._formatted
 
-    def identifier(self):
+    def _get_id(self, line, label_line, num):
+        return "c_%d_%d_%d" % (self._line_id(line), self._line_id(label_line), num)
+
+    def _line_id(self, line):
+        try:
+            return line._temp_id
+        except AttributeError:
+            return line.id
+
+    def id(self):
         return self._id
 
 
@@ -132,11 +141,11 @@ def _suggest_field_by_label_page(field, document, page, pattern_builder, all_fie
         h_match = [handler.find_value(text) for text in h_pre]
         v_match = [handler.find_value(text) for text in v_pre]
 
-        for match in h_match:
-            yield Candidate(h_line, field, match, line)
+        for num, match in enumerate(h_match):
+            yield Candidate(h_line, field, match, line, num)
 
-        for match in v_match:
-            yield Candidate(next_vertical, field, match, line)
+        for num, match in v_match:
+            yield Candidate(next_vertical, field, match, line, num)
 
 def strip_labels(text, all_fields, pattern_builder):
     for field in all_fields:
