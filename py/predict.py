@@ -48,13 +48,13 @@ class MetadataGuesser(object):
         else:
             model = field['model']
             try:
+                box = field['box_phrases'] if 'box_phrases' in field else []
                 fb = line_features.FeatureBuilder(self._fields, self._dictionary,
-                                                  field['box_phrases'],
-                                                  self._pattern_builder)
-                features = fb.features_dataframe(candidates)
+                                                  box, self._pattern_builder)
+                features = fb.features_dataframe([candidates], field_name)
                 scores = model.predict(features)
                 index = scores.argsort()[::-1]
                 return list(np.array(candidates)[index])
-            except ValueError:
+            except ValueError as e:
                 #No suggestions!
                 return None

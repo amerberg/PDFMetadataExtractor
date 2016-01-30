@@ -17,8 +17,11 @@ def load_settings(filename=None):
         if 'model_file' in settings['fields'][name]:
             fn = os.path.join(resolve_path(settings['model_directory'], filename),
                               settings['fields'][name]['model_file'])
-            with open(fn, 'rb') as f:
-                settings['fields'][name]['model'] = pickle.load(f)
+            try:
+                with open(fn, 'rb') as f:
+                    settings['fields'][name]['model'] = pickle.load(f)
+            except IOError:
+                pass
 
     return settings
 
