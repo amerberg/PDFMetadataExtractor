@@ -199,16 +199,8 @@ if __name__ == '__main__':
 
         if "model_file" not in field:
             continue
-        columns = field['features']
-
-        try:
-            columns.remove('box_phrases')
-            columns += ['box_phrases_%s' % phrase for phrase in field['box_phrases']]
-        except ValueError:
-            pass
 
         features = fb.features_dataframe(candidates[field_name], field_name)
-        print(features)
         features.to_csv(path.join(csv_directory, '%s_training_features.csv' % field_name), encoding='utf-8')
 
         col_name = "%s_score" % field_name
