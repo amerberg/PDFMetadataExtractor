@@ -1,7 +1,7 @@
 import re
 from sqlalchemy import Integer, String, Float, Boolean, Date
 from dateutil.parser import parse
-from datetime import date, datetime
+from datetime import date
 from fuzzywuzzy import fuzz
 
 def get_handler(type):
@@ -29,9 +29,6 @@ class TypeHandler(object):
                 return match.group(0).strip()
         return None
 
-    def match_score(self, query, text):
-        return int(query in text)
-
     def compare(self, value1, value2):
         return value1 == value2
 
@@ -54,19 +51,8 @@ class HumanNameHandler(TypeHandler):
         else:
             return name
 
-    def match_score(self, query, text):
-        try:
-            query = query.translate(None, ",.")
-            words = query.split()
-            scores = [(fuzz.partial_ratio(word, text), len(word))
-                      for word in words if len(word) > 1]
-            return sum([a[0] * a[1] for a in scores]
-                       ) / (100 * float(sum([a[1] for a in scores])))
-        except Exception:
-            return 0
-
     def compare(self, value1, value2):
-        return (self.match_score(value1, value2) + self.match_score(value2, value1)) / 2
+        return fuzz.ratio(value1, value2)
 
 
 class DateHandler(TypeHandler):
@@ -107,11 +93,6 @@ class DateHandler(TypeHandler):
             value = re.sub(r"\s+", "", value)
         # Get rid of punctuation noise from scanning
         return str(value).translate(None, r",.'`")
-
-    def match_score(self, query, text):
-        formats = ["%m/%d/%Y", "%m/%d/%y", "%b %d, %Y"]
-        strings = [query.strftime(f) for f in formats]
-        return max([fuzz.partial_ratio(q, text) for q in strings]) / 100.
 
 
 
