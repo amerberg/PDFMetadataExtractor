@@ -52,7 +52,7 @@ class HumanNameHandler(TypeHandler):
             return name
 
     def compare(self, value1, value2):
-        return fuzz.ratio(value1, value2)
+        return fuzz.ratio(value1, value2) / 100.
 
 
 class DateHandler(TypeHandler):
@@ -64,28 +64,25 @@ class DateHandler(TypeHandler):
     _col_type = Date
 
     def format(self, value):
-        replacements = [[(r"([\doOIl]{1,2})[/I1l-]([\doOIl]{1,2})[/I1l-]([\doOIl]{4})", r"\1/\2/\3"),
-                         (r"[Il]", "1"), (r"[oO]", "0")],
+        replacements = [[(r"([0oIl1]?[\doOIl])[/I1l-]([oIl0123]?[\doOIl])[/I1l-]([\doOIl]{4})", r"\1/\2/\3"),
+                         (r"[Il]", "1"), (r"[oO]", "0"), (r"^1([3-9])", "\1")],
                         [(r"[Il]", "1"), (r"[oO]", "0")],
-                        [(r"([\doOIl]{1,2})[/Il1-]([\doOIl]{1,2})[/Il1-]([\doOIl]{2})", r"\1/\2/\3"),
-                         (r"[Il]", "1"), (r"[oO]", "0")],
-                        []
+                        [(r"([0oIl1]?[\doOIl])[/Il1-]([0oIl123]?[\doOIl])[/Il1-]([\doOIl]{2})", r"\1/\2/\3"),
+                         (r"[Il]", "1"), (r"[oO]", "0"), (r"^1([3-9])", "\1")],
+                        [(r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*([0123]?[\d])\s*(\d{2,4})",
+                          r"\1 \2, \3")]
                         ]
         for p, r in zip(self.patterns(), replacements):
-            try:
-                result = re.search(p, value)
-                if result:
-                    new_value = result.group(0)
-                    for error, correction in r:
-                        new_value = re.sub(error, correction, new_value)
-                    d=parse(new_value).date()
-                    # TODO: leave option for future years
-                    if d.year > date.today().year:
-                        d=date(year=d.year-100, month=d.month, day=d.day)
-                    return d
-            except ValueError:
-                pass
-        return None
+            result = re.search(p, value)
+            if result:
+                new_value = result.group(0)
+                for error, correction in r:
+                    new_value = re.sub(error, correction, new_value)
+                d = parse(new_value).date()
+                # TODO: leave option for future years
+                if d.year > date.today().year:
+                    d = date(year=d.year-100, month=d.month, day=d.day)
+                return d
 
     def preprocess(self, value):
         # Get rid of extra spacing
