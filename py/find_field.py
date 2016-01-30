@@ -62,9 +62,6 @@ class Candidate(object):
             #in case there is no label TODO: think about this more
             pass
 
-    def formatted(self):
-        return self._formatted
-
     def _set_id(self, line, label_line, num):
         return "c_%d_%d_%d" % (self._line_id(line), self._line_id(label_line), num)
 
@@ -125,11 +122,13 @@ def suggest_field_by_label(field, document, pattern_builder, all_fields):
     by_page = [_suggest_field_by_label_page(field, document, page,
                                             pattern_builder, all_fields)
                for page in range(document.num_pages)]
-    return itertools.chain(*by_page)
+    return sum(by_page, [])
 
 def _suggest_field_by_label_page(field, document, page, pattern_builder, all_fields):
     results = [r for r in find_field_label(field, document, page, pattern_builder)]
     results.sort(key=lambda x: x[1][0]-x[1][1])
+    candidates = []
+
     for line, span in results:
         next_horizontal, next_vertical = find_next_lines(line)
         line_continuation = next_horizontal.text if next_horizontal else ""
@@ -148,11 +147,19 @@ def _suggest_field_by_label_page(field, document, page, pattern_builder, all_fie
 
         for num, match in enumerate(h_match):
             if match and len(match):
-                yield Candidate(h_line, field, match, line, num)
+                try:
+                    candidates.append(Candidate(h_line, field, match, line, num))
+                except:
+                    pass
 
         for num, match in enumerate(v_match):
             if match and len(match):
-                yield Candidate(next_vertical, field, match, line, num)
+                try:
+                    candidates.append(Candidate(next_vertical, field, match, line, num))
+                except:
+                    pass
+
+    return candidates
 
 def strip_labels(text, all_fields, pattern_builder):
     for field in all_fields:
