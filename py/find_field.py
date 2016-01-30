@@ -1,5 +1,6 @@
 from re import search
 from field_types import get_handler
+import uuid
 
 import itertools
 
@@ -31,7 +32,6 @@ class PatternBuilder(object):
             return self._label_patterns[label]
 
     def field_pattern(self, field):
-
         if 'labels' not in field:
             return None
 
@@ -46,17 +46,18 @@ class PatternBuilder(object):
 
 
 class Candidate(object):
-    def __init__(self, line, field, match_text, label_line, num):
-        self._line = line
+    def __init__(self, line, field, match, label_line, num):
+        self.line = line
         self._field = field
-        self._match_text = match_text
-        self._label_line = label_line
+        self.match = match
+        self.label_line = label_line
         self._handler = get_handler(field['type'])
-        self._formatted = self._handler.format(match_text)
-        self._id = self._get_id(line, label_line, num)
+        self.formatted = self._handler.format(match)
+        self._id = self._set_id(line, label_line, num)
 
         try:
-            self._label_alignment = (label_line.y0 - line.y0) - (label_line.x0 - line.x0)
+            #should be - if v-aligned, pos if on same line
+            self.label_alignment = (label_line.y0 - line.y0) + (label_line.x0 - line.x0)
         except AttributeError:
             #in case there is no label TODO: think about this more
             pass
@@ -64,14 +65,18 @@ class Candidate(object):
     def formatted(self):
         return self._formatted
 
-    def _get_id(self, line, label_line, num):
+    def _set_id(self, line, label_line, num):
         return "c_%d_%d_%d" % (self._line_id(line), self._line_id(label_line), num)
 
     def _line_id(self, line):
         try:
-            return line._temp_id
+            if line.id:
+                return line.id
+            else:
+                return line._temp_id
         except AttributeError:
-            return line.id
+            line._temp_id = uuid.uuid1()
+            return line._temp_id
 
     def id(self):
         return self._id
@@ -99,7 +104,7 @@ def find_next_lines(line):
         if (candidate.x1 >= line.x0 and candidate.x0 <= line.x1 and
                 candidate.y0 < line.y0):
             try:
-                if candidate.y0 < next_vertical.y0:
+                if candidate.y0 > next_vertical.y0:
                     next_vertical = candidate
             except AttributeError:
                 if candidate.y0 < line.y0:
@@ -142,10 +147,12 @@ def _suggest_field_by_label_page(field, document, page, pattern_builder, all_fie
         v_match = [handler.find_value(text) for text in v_pre]
 
         for num, match in enumerate(h_match):
-            yield Candidate(h_line, field, match, line, num)
+            if match and len(match):
+                yield Candidate(h_line, field, match, line, num)
 
-        for num, match in v_match:
-            yield Candidate(next_vertical, field, match, line, num)
+        for num, match in enumerate(v_match):
+            if match and len(match):
+                yield Candidate(next_vertical, field, match, line, num)
 
 def strip_labels(text, all_fields, pattern_builder):
     for field in all_fields:

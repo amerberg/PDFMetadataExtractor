@@ -57,8 +57,6 @@ if __name__ == '__main__':
         for document in query.all():
             value = getattr(document, field_name)
             row_key = 'line_%d' % line.id
-            doc_scores = {row_key:
-                        handler.match_score(value, line.text) for line in document.get_lines()}
             doc_sym_scores = {row_key:
                         handler.compare(value, line.text) for line in document.get_lines()}
             scores.update(doc_scores)
