@@ -6,10 +6,16 @@ class Document(object):
         self._lines = []
 
     def add_line(self, line):
-        self._lines.append(line)
+        try:
+            self._lines.append(line)
+        except AttributeError:
+            pass
 
     def add_box(self, box):
-        self._boxes.append(box)
+        try:
+            self._boxes.append(box)
+        except AttributeError:
+            pass
 
     def get_lines(self):
         try:
@@ -39,7 +45,10 @@ class Box(object):
         self._lines = []
 
     def add_line(self, line):
-        self._lines.append(line)
+        try:
+            self._lines.append(line)
+        except AttributeError:
+            pass
 
     def get_lines(self):
         try:

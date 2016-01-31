@@ -1,13 +1,9 @@
 from settings import load_settings, default_settings_file, load_labels, resolve_path
 from argparse import ArgumentParser
 from extract import extract_pdf_data
-from re import sub
 
 import db
 from schema import *
-
-
-# PDFMiner includes
 import os
 
 
