@@ -177,8 +177,10 @@ if __name__ == '__main__':
 
     fields = settings['fields']
     if args.fields is not None:
-        fields = {field_name: fields[field_name] for field_name in args.fields}
-
+        if args.fields is not None:
+            for field_name in settings['fields']:
+                if field_name not in args.fields:
+                    fields[field_name]['disabled'] = True
 
     #TODO : make this more generalizable!
     box_phrases_params = {}

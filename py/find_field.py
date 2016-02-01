@@ -100,17 +100,16 @@ def find_next_lines(line):
                 if cand.y0 > next_vert.y0:
                     next_vert = cand
             except AttributeError:
-                if cand.y0 < line.y0:
-                    next_vert = cand
+                next_vert = cand
         # Check for vertical overlap
         elif ((cand.y0 <= 0.25*line.y0+0.75*line.y1 <= cand.y1 or
               cand.y0 <= 0.75*line.y0+0.25*line.y1 <= cand.y1) and
               cand.x0 > line.x0):
             try:
                 if cand.x0 < next_hor.x0:
-                    next_hor = candidate
+                    next_hor = cand
             except AttributeError:
-                next_hor = candidate
+                next_hor = cand
 
     return next_hor, next_vert
 
@@ -125,13 +124,12 @@ def find_prev_lines(line):
     for cand in candidates:
         # TODO account for possible page slant
         # Check for horizontal overlap
-        if (cand.x1 >= line.x0 and cand.x0 <=line.x0 and
+        if (cand.x1 >= line.x0 and cand.x0 <= line.x0 and
                 cand.y0 > line.y0):
             try:
                 if cand.y0 < prev_vert.y0:
                     prev_vert = cand
             except AttributeError:
-                if cand.y0 < line.y0:
                     prev_vert = cand
         # Check for vertical overlap
         elif ((cand.y0 <= 0.25*line.y0+0.75*line.y1 <= cand.y1 or
@@ -139,9 +137,9 @@ def find_prev_lines(line):
               cand.x0 < line.x0):
             try:
                 if cand.x0 > prev_hor.x0:
-                    prev_hor = candidate
+                    prev_hor = cand
             except AttributeError:
-                prev_hor = candidate
+                prev_hor = cand
 
     return prev_hor, prev_vert
 
@@ -179,7 +177,6 @@ def suggest_field_by_label(field, document, pattern_builder, all_fields):
                     candidates.append(Candidate(next_vertical, field, match, line, 1, num))
                 except Exception:
                     pass
-
     return candidates
 
 def suggest_field_by_after_text(field, document, pattern_builder, all_fields):
@@ -193,12 +190,12 @@ def suggest_field_by_after_text(field, document, pattern_builder, all_fields):
 
     for line, span in results:
         prev_horizontal, prev_vertical = find_prev_lines(line)
-        line_continuation = prev_horizontal.text if prev_horizontal else ""
+        line_start = prev_horizontal.text if prev_horizontal else ""
 
         # if there is no alphanumeric (TODO: allow configuration)
         #  here, consider next horizontal line
         h_text, h_line = (line.text[:span[0]], line) if search(r"[a-zA-Z0-9]", line.text[:span[0]]) \
-            else (line_continuation, prev_horizontal)
+            else (line_start, prev_horizontal)
         h_text = strip_labels(h_text, all_fields, pattern_builder)
         v_text = strip_labels(prev_vertical.text, all_fields, pattern_builder) if prev_vertical else ""
         handler = get_handler(field['type'])
@@ -228,10 +225,10 @@ def suggest_field(field, document, pattern_builder, all_fields):
         + suggest_field_by_after_text(field, document, pattern_builder, all_fields)
 
 def strip_labels(text, all_fields, pattern_builder):
-    for field in all_fields:
+    for field_name, field in all_fields.iteritems():
         if "labels" not in field:
             continue
-        pattern = pattern_builder.list_pattern(all_fields[field]['labels'])
+        pattern = pattern_builder.list_pattern(field['labels'])
         if pattern is None:
             continue
         try:
