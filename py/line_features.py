@@ -1,5 +1,5 @@
 from settings import load_settings, resolve_path, default_settings_file
-from find_field import suggest_field_by_label, PatternBuilder
+from find_field import suggest_field, PatternBuilder
 from argparse import ArgumentParser
 from schema import *
 import db
@@ -44,7 +44,10 @@ class FeatureBuilder(object):
                  'length': self.length,
                  'digit_count': self.digit_count,
                  'alpha_count': self.alpha_count,
-                 'rank_formatted': lambda x: self.rank(x, lambda c: c.formatted)}
+                 'rank_formatted': lambda x: self.rank(x, lambda c: c.formatted),
+                 'hint_offset_x': lambda z: {c.id():getattr(c, 'hint_offset_x') for c in z},
+                 'hint_offset_y': lambda z: {c.id():getattr(c, 'hint_offset_y') for c in z},
+                 'hint_order': lambda z: {c.id():getattr(c, 'hint_order') for c in z}}
         return funcs[name]
 
     def doc_features(self, candidates, field_name):
@@ -118,7 +121,7 @@ class FeatureBuilder(object):
         result = {candidate.id(): {} for candidate in candidates}
         for candidate in candidates:
             for key, labels in self._box_phrases.iteritems():
-                pattern = self._pattern_builder.field_pattern({'labels' : labels})
+                pattern = self._pattern_builder.list_pattern(labels)
 
                 result[candidate.id()][key] = len([1 for line in candidate.line.box.get_lines()
                             if re.search(pattern, line.text) is not None])
@@ -192,7 +195,7 @@ if __name__ == '__main__':
                 continue
             if getattr(document, field_name) is None:
                 continue
-            doc_candidates = suggest_field_by_label(field, document, pb, all_fields)
+            doc_candidates = suggest_field(field, document, pb, all_fields)
             candidates[field_name].append(doc_candidates)
 
     for field_name, field in fields.iteritems():
