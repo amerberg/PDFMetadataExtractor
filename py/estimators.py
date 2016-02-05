@@ -30,27 +30,26 @@ class ModelWrapper(BaseEstimator):
         scores = []
         for document in X:
             try:
-                scores.append(document.scores[self.field_name])
+                scores.append(document.scores[self.field.name])
             except (KeyError, AttributeError):
                 self._get_data(document)
-                scores.append(document.scores[self.field_name])
+                scores.append(document.scores[self.field.name])
         return pd.concat([s for s in scores if len(s) > 0])
 
     def get_values(self, X):
         values = []
         for document in X:
             try:
-                values.append(document.value[self.field_name])
+                values.append(document.values[self.field.name])
             except (KeyError, AttributeError):
                 self._get_data(document)
-                values.append(document.value[self.field_name])
+                values.append(document.values[self.field.name])
 
         return pd.concat([f for f in values if len(f) > 0])
 
     def _get_data(self, document):
         field = self.field
         field_name = field.name
-        fb = self.feature_builder
 
         candidates = field.get_candidates(document)
 
@@ -96,14 +95,13 @@ class ModelWrapper(BaseEstimator):
         pred_scores = self.model_.predict(features)
         pred_scores = pd.Series(pred_scores, index=features.index)
         y = []
-        value = self.get_value(X)
+        value = self.get_values(X)
 
         for document in X:
             try:
                 doc_scores = pred_scores.xs(document.id, level='document').sort_index()
                 doc_value = value.xs(document.id, level='document').sort_index()
                 index = doc_scores.idxmax()
-                y.append(doc_value[index])
                 y.append(doc_value[index])
             except KeyError as e:
                 y.append(None)
@@ -114,6 +112,7 @@ class ModelWrapper(BaseEstimator):
     def score(self, X, y):
         y_pred = self.predict(X)
         scores = []
+
         for actual, pred in zip(y, y_pred):
             score = self.field.compare(actual, pred)
             if score > self.threshold:
