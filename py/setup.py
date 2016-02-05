@@ -2,7 +2,6 @@ from settings import Settings
 from argparse import ArgumentParser
 from extract import extract_pdf_data
 
-import db
 from pdf_classes import *
 import os
 

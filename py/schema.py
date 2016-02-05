@@ -1,7 +1,6 @@
 #from pdf_classes import *
 from sqlalchemy import Column, ForeignKey, Table
 from sqlalchemy import Integer, Float, Boolean
-#from sqlalchemy.orm import relationship, mapper
 from fields import *
 
 # TODO: allow configuration of string lengths

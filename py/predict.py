@@ -1,5 +1,4 @@
 import candidate_export
-import find_field
 import numpy as np
 
 class MetadataGuesser(object):
