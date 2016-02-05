@@ -4,6 +4,8 @@ import os
 import importlib
 import pattern_builder
 import re
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 
 class Settings:
@@ -24,10 +26,15 @@ class Settings:
             self._data = yaml.load(f)
 
     def session(self):
-        import db
-        maker = db.session(self._data['db'])
+        maker = sessionmaker(bind=self.engine())
         return maker()
 
+    def engine(self):
+        db = self._data['db']
+        return create_engine("%s://%s:%s@%s:%d/%s?charset=utf8" % (db['backend'],
+                             db['username'], db['password'],
+                             db['server'], db['port'],
+                             db['name']))
     def _set_files(self):
         files = collections.defaultdict(dict, self._data['files'])
         self._files = {key: self.resolve_path(value)
@@ -55,6 +62,9 @@ class Settings:
     def get_directory(self, name):
         return self._directories[name]
 
+    def get_file(self, name):
+        return self._files[name]
+
     def _load_fields(self):
         self.fields = {}
         for name in collections.defaultdict(dict, self._data)['fields']:
@@ -66,8 +76,8 @@ class Settings:
                 params = info['parameters'] if 'parameters' in info else {}
                 self.fields[name] = func(self, name, info, **params)
 
-    def labels(self):
-        with open(self._files['labels'], "r") as f:
+    def load_labels(self):
+        with open(self.get_file('label'), "r") as f:
             return yaml.load(f)
 
     # TODO: the following would probably fit better somewhere else

@@ -3,12 +3,8 @@ from argparse import ArgumentParser
 from extract import extract_pdf_data
 
 import db
-from schema import *
+from pdf_classes import *
 import os
-
-def install_schema(engine, fields):
-    metadata = map_tables(fields)
-    metadata.create_all(engine)
 
 
 if __name__ == "__main__":
@@ -18,24 +14,18 @@ if __name__ == "__main__":
                            default=None)
 
     args = parser.parse_args()
-    settings_file = args.settings if args.settings else default_settings_file()
-    settings = load_settings(settings_file)
+    settings = Settings(args.settings)
+    metadata=settings.map_tables()
+
 
     if args.schema:
-        install_schema(db.engine(settings), settings['fields'])
+        metadata.create_all(settings.engine())
     else:
-        map_tables(settings['fields'])
-        Session = db.session(settings)
-        session = Session()
-        pdf_dir = settings['pdf_directory']
-        label_file = settings['label_file']
-
-        pdf_dir = resolve_path(pdf_dir, settings_file)
-
-        label_file = resolve_path(label_file, settings_file)
+        session = settings.session()
+        pdf_dir = settings.get_directory('pdf')
 
         existing = [fn[0] for fn in session.query(Document.filename)]
-        labels = load_labels(label_file)
+        labels = settings.load_labels()
 
         for filename in os.listdir(pdf_dir):
             if filename not in existing:
@@ -45,5 +35,6 @@ if __name__ == "__main__":
                     with open(os.path.join(pdf_dir, filename), "r") as fp:
                         extract_pdf_data(fp, file_labels, session)
                 except Exception as e:
+                    session.rollback()
                     print (filename, e)
 

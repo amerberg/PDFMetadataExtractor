@@ -9,10 +9,11 @@ from pdfminer.layout import LTTextLineVertical, LTTextBoxVertical
 from pdf_classes import *
 
 import re
+import os
 
 
 def extract_pdf_data(fp, labels={}, session=None):
-    filename = fp.name.split()[-1]
+    filename = os.path.split(fp.name)[-1]
     parser = PDFParser(fp)
     pdf = PDFDocument(parser)
     parser.set_document(pdf)

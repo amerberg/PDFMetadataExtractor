@@ -37,8 +37,8 @@ class DateField(Field):
             if result:
                 new_text = result.group(0)
                 for error, correction in r:
-                    new_value = re.sub(error, correction, new_text)
-                d = parse(new_value).date()
+                    new_text = re.sub(error, correction, new_text)
+                d = parse(new_text).date()
                 # TODO: leave option for future years
 
                 if self.end and d > self.end:
@@ -61,12 +61,12 @@ class HumanNameField(Field):
         #Get rid of extra spaces
         text = re.sub(r'\s+', ' ', text)
         #See if it's "Lastname, Firstname"
-        result = re.search(r"([A-Za-z01\-\s']+)[,.]\s*([A-Za-z01\-\s']+.)", value)
+        result = re.search(r"([A-Za-z01\-\s']+)[,.]\s*([A-Za-z01\-\s']+.)", text)
         try:
             name = "%s %s" % (result.group(2), result.group(1))
         except AttributeError:
             # Maybe it's a name in "Firstname Lastname" format
-            name = value
+            name = text
         #Maintain case unless it's all-caps
         if name.isupper():
             return name.title()

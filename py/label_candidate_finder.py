@@ -3,9 +3,10 @@ import re
 
 class LabelCandidateFinder(CandidateFinder):
 
-    def __init__(self, field, gid, pattern_builder, max_xgap=1000, max_ygap=1000):
+    def __init__(self, field, gid, pattern_builder, max_xgap=10000, max_ygap=10000):
         self._max_xgap = max_xgap
         self._max_ygap = max_ygap
+        self._counts = {}
         CandidateFinder.__init__(self, field, gid, pattern_builder)
 
     def match_labels(self, document):
@@ -49,6 +50,10 @@ class LabelCandidateFinder(CandidateFinder):
         return next_hor, next_vert
 
     def get_candidates(self, document):
+        if not hasattr(document, "id"):
+            document.id = 0
+        self._counts[document.id] = 0
+
         strip_labels = self.field.settings.strip_labels
         results = [r for r in self.match_labels(document)]
         candidates = []
@@ -69,12 +74,12 @@ class LabelCandidateFinder(CandidateFinder):
             h_match = [field.find_value(text) for text in h_pre]
             v_match = [field.find_value(text) for text in v_pre]
 
-            counter = 0
+
             for match in h_match:
                 if match and len(match):
                     try:
-                        candidates.append(LabelCandidate(h_line, field, match, self.gid, counter, line))
-                        counter += 1
+                        candidates.append(LabelCandidate(h_line, field, match, self.gid, self._counts[document.id], line))
+                        self._counts[document.id] += 1
                         # shouldn't have more than one horizontal match
                         break
                     except Exception as e:
@@ -83,8 +88,8 @@ class LabelCandidateFinder(CandidateFinder):
             for match in v_match:
                 if match and len(match):
                     try:
-                        candidates.append(LabelCandidate(next_vertical, field, match, self.gid, counter, line))
-                        counter += 1
+                        candidates.append(LabelCandidate(next_vertical, field, match, self.gid, self._counts[document.id], line))
+                        self._counts[document.id] += 1
                     except Exception:
                         pass
         return candidates

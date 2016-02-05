@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
     candidates = {field_name: [] for field_name in fields}
     for document in session.query(Document).options(joinedload(Document.lines))\
-            .filter(Document.is_test == 0).limit(100):
+            .filter(Document.is_test == 0):
         for field_name, field in fields.iteritems():
             if getattr(document, field_name) is None:
                 continue
@@ -60,4 +60,4 @@ if __name__ == '__main__':
 
         value_df = pd.DataFrame({col_name: texts}).sort_index()
         value_df.index.names = features.index.names
-        value_df.to_csv(path.join(csv_directory, '%s_training_formatted.csv' % field_name), encoding='utf-8')
+        value_df.to_csv(path.join(csv_directory, '%s_training_value.csv' % field_name), encoding='utf-8')

@@ -15,11 +15,11 @@ class chars_in_string(Feature):
         Feature.__init__(self, field)
 
     def compute(self, candidates):
-        return {candidate.id: sum([candidate.formatted.count(c) for c in self._string]) for candidate in candidates}
+        return {candidate.id: sum([candidate.value.count(c) for c in self._string]) for candidate in candidates}
 
 class word_count(Feature):
     def compute(self, candidates):
-        return {candidate.id: len(candidate.formatted.split()) for candidate in candidates}
+        return {candidate.id: len(candidate.value.split()) for candidate in candidates}
 
 class line_height(Feature):
     def compute(self, candidates):
@@ -97,15 +97,15 @@ class contains_string(Feature):
 
 class length(Feature):
     def compute(self, candidates):
-        return {candidate.id: len(candidate.formatted) for candidate in candidates}
+        return {candidate.id: len(candidate.value) for candidate in candidates}
 
 class digit_count(Feature):
     def compute(self, candidates):
-        return {candidate.id: sum([c.isdigit() for c in candidate.formatted]) for candidate in candidates}
+        return {candidate.id: sum([c.isdigit() for c in candidate.value]) for candidate in candidates}
 
 class alpha_count(Feature):
     def compute(self, candidates):
-        return {candidate.id: sum([c.isalpha() for c in candidate.formatted]) for candidate in candidates}
+        return {candidate.id: sum([c.isalpha() for c in candidate.value]) for candidate in candidates}
 
 
 class rank_value(Feature):
