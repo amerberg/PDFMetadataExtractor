@@ -1,17 +1,15 @@
-import find_field
 import pandas as pd
 import numpy as np
 import fields
 from sklearn.base import BaseEstimator
 import sys
+import importlib
 
 
 class ModelWrapper(BaseEstimator):
-    def __init__(self, field_name="", all_fields={}, feature_builder=None,
-                 threshold=0, model_module="", model_class="", model_params=None):
-        self.field_name = field_name
-        self.all_fields = all_fields
-        self.feature_builder = feature_builder
+    def __init__(self, field, threshold=0,
+                 model_module="", model_class="", model_params=None):
+        self.field = field
         self._estimator_type = "text"
         self.threshold = threshold
         self.model_class = model_class
@@ -23,11 +21,11 @@ class ModelWrapper(BaseEstimator):
         features = []
         for document in X:
             try:
-                features.append(document.features[self.field_name])
+                features.append(document.features[self.field.name])
             except (KeyError, AttributeError):
                 self._get_data(document)
-                features.append(document.features[self.field_name])
-        result=pd.concat([f for f in features if len(f) > 0]).sort_index()
+                features.append(document.features[self.field.name])
+        result = pd.concat([f for f in features if len(f) > 0]).sort_index()
         return result
 
     def get_scores(self, X):
@@ -40,27 +38,25 @@ class ModelWrapper(BaseEstimator):
                 scores.append(document.scores[self.field_name])
         return pd.concat([s for s in scores if len(s) > 0])
 
-    def get_formatted(self, X):
-        formatted = []
+    def get_values(self, X):
+        values = []
         for document in X:
             try:
-                formatted.append(document.formatted[self.field_name])
+                values.append(document.value[self.field_name])
             except (KeyError, AttributeError):
                 self._get_data(document)
-                formatted.append(document.formatted[self.field_name])
+                values.append(document.value[self.field_name])
 
-        return pd.concat([f for f in formatted if len(f) > 0])
+        return pd.concat([f for f in values if len(f) > 0])
 
     def _get_data(self, document):
-        handler = fields.get_handler(self.all_fields[self.field_name]['type'])
-        field_name = self.field_name
-        field = self.all_fields[field_name]
+        field = self.field
+        field_name = field.name
         fb = self.feature_builder
-        pb = fb.pattern_builder()
 
-        candidates = find_field.suggest_field(field, document, pb, self.all_fields)
+        candidates = field.get_candidates(document)
 
-        features = fb.features_dataframe([candidates], field_name)
+        features = field.features_dataframe([candidates])
         try:
             document.features[field_name] = features
         except AttributeError:
@@ -69,9 +65,9 @@ class ModelWrapper(BaseEstimator):
         scores = {}
         for candidate in candidates:
             value = getattr(candidate.line.document, field_name)
-            row_key = candidate.id()
+            row_key = candidate.id
             try:
-                scores[row_key] = handler.compare(value, candidate.formatted)
+                scores[row_key] = field.compare(value, candidate.value)
             except TypeError:
                 scores[row_key] = 0
 
@@ -82,20 +78,18 @@ class ModelWrapper(BaseEstimator):
         except AttributeError:
             document.scores = {field_name: scores_series}
 
-        formatted = {}
-        for candidate in candidates:
-            row_key = candidate.id()
-            formatted[row_key] = candidate.formatted
-        format_series = pd.Series(formatted)
-        format_series.index = features.index
+        values = {candidate.id: candidate.value for candidate in candidates}
+        values_series = pd.Series(values)
+        values_series.index = features.index
 
         try:
-            document.formatted[field_name] = format_series.sort_index()
+            document.value[field_name] = values_series.sort_index()
         except AttributeError:
-            document.formatted = {field_name: format_series}
+            document.value = {field_name: values_series}
 
     def fit(self, X, y):
-        func = getattr(sys.modules[self.model_module], self.model_class)
+        module = importlib.import_module(self.model_module)
+        func = getattr(module, self.model_class)
         self.model_ = func(**self.model_params)
         self.model_.fit(self.get_features(X), np.ravel(self.get_scores(X).values))
 
@@ -104,14 +98,15 @@ class ModelWrapper(BaseEstimator):
         pred_scores = self.model_.predict(features)
         pred_scores = pd.Series(pred_scores, index=features.index)
         y = []
-        formatted = self.get_formatted(X)
+        value = self.get_value(X)
 
         for document in X:
             try:
                 doc_scores = pred_scores.xs(document.id, level='document').sort_index()
-                doc_formatted = formatted.xs(document.id, level='document').sort_index()
+                doc_value = value.xs(document.id, level='document').sort_index()
                 index = doc_scores.idxmax()
-                y.append(doc_formatted[index])
+                y.append(doc_value[index])
+                y.append(doc_value[index])
             except KeyError as e:
                 y.append(None)
                 pass
@@ -119,13 +114,12 @@ class ModelWrapper(BaseEstimator):
         return np.array(y)
 
     def score(self, X, y):
-        handler = fields.get_handler(self.all_fields[self.field_name]['type'])
         y_pred = self.predict(X)
         scores = []
         for actual, pred in zip(y, y_pred):
-            score = handler.compare(actual, pred)
+            score = self.field.compare(actual, pred)
             if score > self.threshold:
-                scores.append(handler.compare(actual, pred))
+                scores.append(score)
 
         return sum(scores) / float(len([actual for actual in y if actual is not None]))
 

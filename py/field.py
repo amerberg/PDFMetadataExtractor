@@ -10,7 +10,6 @@ class Field:
         self.name = name
         self.settings = settings
         self.labels = collections.defaultdict(list, data)['labels']
-        #self._substitutions = collections.defaultdict(dict, data)['substitutions']
         self._data = data
         self._load_features()
         self._load_candidate_finders()
