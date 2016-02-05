@@ -18,7 +18,7 @@ class DateField(Field):
     def __init__(self, settings, name, data, allowed_range=None):
         self.start = None
         self.end = None
-        if range is not None:
+        if allowed_range is not None:
             self.start, self.end = allowed_range
 
         Field.__init__(self, settings, name, data)
@@ -32,16 +32,16 @@ class DateField(Field):
                         [(r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*([0123]?[\d])\s*(\d{2,4})",
                           r"\1 \2, \3")]
                         ]
-        for p, r in zip(self.patterns(), replacements):
+        for p, r in zip(self.patterns, replacements):
             result = re.search(p, text)
             if result:
                 new_text = result.group(0)
                 for error, correction in r:
                     new_value = re.sub(error, correction, new_text)
-                d = parse(new_text).date()
+                d = parse(new_value).date()
                 # TODO: leave option for future years
 
-                if d > self.end:
+                if self.end and d > self.end:
                     d = date(year=d.year-100, month=d.month, day=d.day)
                 return d
 

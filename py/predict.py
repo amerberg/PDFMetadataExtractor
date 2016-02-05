@@ -1,4 +1,4 @@
-import line_features
+import candidate_export
 import find_field
 import numpy as np
 
@@ -50,8 +50,8 @@ class MetadataGuesser(object):
             model = field['model']
             try:
                 box = field['box_phrases'] if 'box_phrases' in field else []
-                fb = line_features.FeatureBuilder(self._fields, self._dictionary,
-                                                  box, self._pattern_builder)
+                fb = candidate_export.FeatureBuilder(self._fields, self._dictionary,
+                                                     box, self._pattern_builder)
                 features = fb.features_dataframe([candidates], field_name)
                 scores = model.predict(features)
                 index = scores.argsort()[::-1]

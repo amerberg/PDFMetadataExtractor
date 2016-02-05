@@ -1,7 +1,7 @@
 import find_field
 import pandas as pd
 import numpy as np
-import field_types
+import fields
 from sklearn.base import BaseEstimator
 import sys
 
@@ -52,7 +52,7 @@ class ModelWrapper(BaseEstimator):
         return pd.concat([f for f in formatted if len(f) > 0])
 
     def _get_data(self, document):
-        handler = field_types.get_handler(self.all_fields[self.field_name]['type'])
+        handler = fields.get_handler(self.all_fields[self.field_name]['type'])
         field_name = self.field_name
         field = self.all_fields[field_name]
         fb = self.feature_builder
@@ -119,7 +119,7 @@ class ModelWrapper(BaseEstimator):
         return np.array(y)
 
     def score(self, X, y):
-        handler = field_types.get_handler(self.all_fields[self.field_name]['type'])
+        handler = fields.get_handler(self.all_fields[self.field_name]['type'])
         y_pred = self.predict(X)
         scores = []
         for actual, pred in zip(y, y_pred):

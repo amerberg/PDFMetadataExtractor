@@ -1,5 +1,5 @@
 import collections
-import sys
+import importlib
 import abc
 import re
 import pandas as pd
@@ -9,36 +9,34 @@ class Field:
     def __init__(self, settings, name, data):
         self.name = name
         self.settings = settings
-        self._labels = collections.defaultdict(list, data)['labels']
-        self._substitutions = collections.defaultdict(dict, data)['substitutions']
-        self._load_features()
+        self.labels = collections.defaultdict(list, data)['labels']
+        #self._substitutions = collections.defaultdict(dict, data)['substitutions']
         self._data = data
-
-    def labels(self):
-        return self._labels()
-
-    def features(self):
-        return self._features()
+        self._load_features()
+        self._load_candidate_finders()
 
     def _load_features(self):
         self.features = {}
-        for name in collections.defaultdict(dict, self._data)['features']:
-            info = self._data['features'][name]
-            module = info['module']
+        infos = self._data['features']
+        for name, info in infos.iteritems():
+            module = importlib.import_module(info['module'])
             cls = info['class']
-            params = info['parameters']
-            func = getattr(sys.modules[module], cls)
+            params = info['parameters'] if 'parameters' in info else {}
+            func = getattr(module, cls)
             self.features[name] = func(self, **params)
 
-    def _load_candidate_generators(self):
-        self._candidate_generators = {}
-        for name in collections.defaultdict(dict, self._data)['candidate_generators']:
-            info = self._data['candidate_generators'][name]
-            module = info['module']
+    def _load_candidate_finders(self):
+        self._candidate_finders = {}
+        for num, name in enumerate(collections.defaultdict(dict, self._data)['candidate_finders']):
+            info = self._data['candidate_finders'][name]
+            module = importlib.import_module(info['module'])
             cls = info['class']
             params = info['parameters']
-            func = getattr(sys.modules[module], cls)
-            self.candidate_generators[name] = func(self, **params)
+            func = getattr(module, cls)
+            self._candidate_finders[name] = func(self, num, self.settings.pattern_builder, **params)
+
+    def get_candidates(self, document):
+        return sum([finder.get_candidates(document) for finder in self._candidate_finders.values()], [])
 
     @abc.abstractmethod
     def patterns(self):
@@ -47,14 +45,14 @@ class Field:
     def col_type(self):
         return self._col_type
 
-    def format(self, value):
+    def get_value(self, value):
         return value
 
     def preprocess(self, text):
         return text
 
     def find_value(self, text):
-        for pattern in self.patterns():
+        for pattern in self.patterns:
             match = re.search(pattern, text)
             if match:
                 return match.group(0).strip()
@@ -64,11 +62,11 @@ class Field:
         return value1 == value2
 
     def doc_features(self, candidates):
-        result = {candidate.id(): {} for candidate in candidates}
+        result = {candidate.id: {} for candidate in candidates}
         for feature_name, feature in self.features.iteritems():
             values = feature.compute(candidates)
             for candidate in candidates:
-                cid = candidate.id()
+                cid = candidate.id
                 result[cid][feature_name] = values[cid]
         return result
 
@@ -79,5 +77,5 @@ class Field:
 
         df = pd.DataFrame(features).transpose()
         if len(df) > 0:
-            df.index.names = ['document', 'line', 'generator', 'num']
+            df.index.names = ['document', 'finder', 'num']
         return df

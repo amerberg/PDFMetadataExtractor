@@ -1,15 +1,15 @@
 from candidate import *
 import re
 
-class LabelCandidateGenerator(CandidateGenerator):
+class LabelCandidateFinder(CandidateFinder):
 
-    def __init__(self, field, pattern_builder, max_xgap=1000, max_ygap=1000):
+    def __init__(self, field, gid, pattern_builder, max_xgap=1000, max_ygap=1000):
         self._max_xgap = max_xgap
         self._max_ygap = max_ygap
-        CandidateGenerator.__init__(self, field, pattern_builder)
+        CandidateFinder.__init__(self, field, gid, pattern_builder)
 
     def match_labels(self, document):
-        labels = self._field.labels()
+        labels = self.field.labels
         pattern = self._pattern_builder.list_pattern(labels)
 
         for line in document.get_lines():
@@ -50,9 +50,9 @@ class LabelCandidateGenerator(CandidateGenerator):
 
     def get_candidates(self, document):
         strip_labels = self.field.settings.strip_labels
-        results = [r for r in self.match_list(document)]
+        results = [r for r in self.match_labels(document)]
         candidates = []
-        field = self._field
+        field = self.field
 
         for line, span in results:
             next_horizontal, next_vertical = self._find_next_lines(line)
@@ -69,19 +69,29 @@ class LabelCandidateGenerator(CandidateGenerator):
             h_match = [field.find_value(text) for text in h_pre]
             v_match = [field.find_value(text) for text in v_pre]
 
-            for num, match in enumerate(h_match):
+            counter = 0
+            for match in h_match:
                 if match and len(match):
                     try:
-                        candidates.append(Candidate(h_line, field, match, line))
+                        candidates.append(LabelCandidate(h_line, field, match, self.gid, counter, line))
+                        counter += 1
                         # shouldn't have more than one horizontal match
                         break
-                    except:
+                    except Exception as e:
                         pass
 
-            for num, match in enumerate(v_match):
+            for match in v_match:
                 if match and len(match):
                     try:
-                        candidates.append(Candidate(next_vertical, field, match, line))
+                        candidates.append(LabelCandidate(next_vertical, field, match, self.gid, counter, line))
+                        counter += 1
                     except Exception:
                         pass
         return candidates
+
+class LabelCandidate(Candidate):
+    def __init__(self, line, field, match, generator_id, num, label_line):
+        self.label_line = label_line
+        self.label_offset_x = label_line.x0 - line.x0
+        self.label_offset_y = label_line.y0 - line.x0
+        Candidate.__init__(self, line, field, match, generator_id, num)

@@ -1,6 +1,6 @@
 from settings import load_settings, default_settings_file, resolve_path
 from argparse import ArgumentParser
-from field_types import get_handler
+from fields import get_handler
 from schema import *
 import db
 import pandas as pd

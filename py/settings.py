@@ -1,7 +1,10 @@
 import yaml
-import collections, os, sys, pattern_builder
-import sqlalchemy
-import sqlalchemy.orm
+import collections
+import os
+import importlib
+import pattern_builder
+import re
+
 
 class Settings:
     def __init__(self, filename):
@@ -9,9 +12,11 @@ class Settings:
             filename = self.default_file()
         self.filename = filename
         self._load_from_file()
+        self.pattern_builder = pattern_builder.PatternBuilder(self._data['substitutions'])
+
+        self._load_fields()
         self._set_files()
         self._set_directories()
-        self._pattern_builder = pattern_builder.PatternBuilder(self._data['substitutions'])
         self._extra_labels = self._data['extra_labels']
 
     def _load_from_file(self):
@@ -36,13 +41,9 @@ class Settings:
     def resolve_path(self, path):
         settings_file = self.filename
         if not os.path.isabs(path):
-            return os.path.join(os.path.split(settings_file)[0],
-                                   path)
+            return os.path.join(os.path.split(settings_file)[0], path)
         else:
             return path
-
-    def pattern_builder(self):
-        return self._pattern_builder
 
     def default_file(self):
         return os.path.abspath("../settings.yml")
@@ -50,22 +51,20 @@ class Settings:
     def substitutions(self):
         return self._data['substitutions']
 
-    def fields(self):
-        return self._fields
 
     def get_directory(self, name):
         return self._directories[name]
 
     def _load_fields(self):
-        self._fields = {}
+        self.fields = {}
         for name in collections.defaultdict(dict, self._data)['fields']:
-            info = collections.defaultdict(None, self._data['fields'][name])
-            if not info['disabled']:
-                module = info['module']
+            info = self._data['fields'][name]
+            if 'disabled' not in info or not info['disabled']:
+                module = importlib.import_module(info['module'])
                 cls = info['class']
-                params = info['parameters']
-                func = getattr(sys.modules[module], cls)
-                self._fields[name] = func(self, **params)
+                func = getattr(module, cls)
+                params = info['parameters'] if 'parameters' in info else {}
+                self.fields[name] = func(self, name, info, **params)
 
     def labels(self):
         with open(self._files['labels'], "r") as f:
@@ -73,12 +72,10 @@ class Settings:
 
     # TODO: the following would probably fit better somewhere else
     def strip_labels(self, text):
-        patterns = sum([field.labels() for field in self.fields().items()], [])
+        patterns = sum([field.labels for field in self.fields.values()], [])
         patterns += self._extra_labels
         for pattern in patterns:
-            if "labels" not in field:
-                continue
-            pattern = self.pattern_builder().list_pattern(patterns)
+            pattern = self.pattern_builder.list_pattern(patterns)
             if pattern is None:
                 continue
             try:
@@ -91,18 +88,21 @@ class Settings:
         return text.split("\n")
 
     def map_tables(self):
-        from schema import *
+        from schema import document_table, box_table, line_table
         from sqlalchemy import MetaData
+        from sqlalchemy.orm import mapper, relationship
+        from pdf_classes import Document, Box, Line
+
         metadata = MetaData()
-        mapper(Document, document_table(self.fields(), metadata),
+        mapper(Document, document_table(self.fields, metadata),
                properties={'boxes': relationship(Box, back_populates='document'),
                            'lines': relationship(Line, back_populates='document')
                            })
-        mapper(Box, box_table(self.fields(), metadata),
+        mapper(Box, box_table(metadata),
                properties={'document': relationship(Document, back_populates='boxes'),
                            'lines': relationship(Line, back_populates='box')
                            })
-        mapper(Line, line_table(self.fields(), metadata),
+        mapper(Line, line_table(metadata),
                properties={'document': relationship(Document, back_populates='lines'),
                            'box': relationship(Box, back_populates='lines')
                            })

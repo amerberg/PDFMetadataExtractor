@@ -2,7 +2,7 @@
 from sqlalchemy import Column, ForeignKey, Table
 from sqlalchemy import Integer, Float, Boolean
 #from sqlalchemy.orm import relationship, mapper
-from field_types import *
+from fields import *
 
 # TODO: allow configuration of string lengths
 def document_table(fields, metadata):
