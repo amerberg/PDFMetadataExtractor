@@ -3,10 +3,10 @@ from sqlalchemy.orm import sessionmaker
 
 
 def engine(settings):
-    return create_engine("%s://%s:%s@%s:%d/%s" % (settings['db_backend'],
-                         settings['db_username'], settings['db_password'],
-                         settings['db_server'], settings['db_port'],
-                         settings['db_name']))
+    return create_engine("%s://%s:%s@%s:%d/%s" % (settings['backend'],
+                         settings['username'], settings['password'],
+                         settings['server'], settings['port'],
+                         settings['name']))
 
 
 def session(settings):

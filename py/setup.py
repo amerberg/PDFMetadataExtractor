@@ -1,10 +1,14 @@
-from settings import load_settings, default_settings_file, load_labels, resolve_path
+from settings import Settings
 from argparse import ArgumentParser
 from extract import extract_pdf_data
 
 import db
 from schema import *
 import os
+
+def install_schema(engine, fields):
+    metadata = map_tables(fields)
+    metadata.create_all(engine)
 
 
 if __name__ == "__main__":

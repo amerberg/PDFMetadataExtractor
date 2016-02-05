@@ -19,6 +19,7 @@ class MetadataGuesser(object):
             if 'disabled' in field and field['disabled']:
                 continue
 
+
             candidates = find_field.suggest_field(field, document,
                                                   self._pattern_builder,
                                                   self._all_fields)
