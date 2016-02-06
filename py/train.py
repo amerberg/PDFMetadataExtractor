@@ -26,9 +26,11 @@ if __name__ == "__main__":
 
     field_name = model_def['field']
     field = settings.fields[field_name]
+    parameters = model_def['parameters'] if "parameters" in model_def else {}
+    n_jobs = model_def['n_jobs'] if "n_jobs" in model_def else 1
 
     wrapper = estimators.ModelWrapper(field, model_def['threshold'], model_def['module'],
-                                      model_def['class'])
+                                      model_def['class'], model_params=parameters)
 
     y = []
     X = []
@@ -63,8 +65,8 @@ if __name__ == "__main__":
                     document.scores = {field_name: []}
                     document.values = {field_name: []}
 
-
-    gs = GridSearchCV(wrapper, param_grid=model_def['parameter_grid'], cv=model_def['folds'])
+    gs = GridSearchCV(wrapper, param_grid=model_def['parameter_grid'],
+                      cv=model_def['folds'], n_jobs=n_jobs)
     gs.fit(X, y)
 
     with open(os.path.join(settings.get_directory('pickle'), '%s.pkl' % args.model_file), 'w') as f:

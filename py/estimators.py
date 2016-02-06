@@ -6,7 +6,7 @@ import importlib
 
 class ModelWrapper(BaseEstimator):
     def __init__(self, field, threshold=0,
-                 model_module="", model_class="", model_params=None):
+                 model_module="", model_class="", model_params={}):
         self.field = field
         self._estimator_type = "text"
         self.threshold = threshold
@@ -123,7 +123,7 @@ class ModelWrapper(BaseEstimator):
         if not params:
             return self
         valid_params = self.get_params(deep=True)
-        model_params = {}
+        model_params = self.model_params
         wrapper_params = {}
         for key, value in params.iteritems():
             if key in valid_params:
