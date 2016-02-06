@@ -4,6 +4,7 @@ from pdf_classes import *
 import pandas as pd
 from sqlalchemy.orm import joinedload
 from os import path
+import uuid
 
 
 
@@ -19,6 +20,7 @@ if __name__ == '__main__':
     settings.map_tables()
     session = settings.session()
     csv_directory = settings.get_directory('csv')
+    token = uuid.uuid1()
 
     fields = settings.fields
     if args.fields is not None:
@@ -35,7 +37,8 @@ if __name__ == '__main__':
 
     for field_name, field in fields.iteritems():
         features = field.features_dataframe(candidates[field_name])
-        features.to_csv(path.join(csv_directory, '%s_training_features.csv' % field_name), encoding='utf-8')
+        features.to_csv(path.join(csv_directory, '%s_training_features.%s.csv'
+                                  % (field_name, token)), encoding='utf-8')
 
         col_name = "%s_score" % field_name
         scores = {}
@@ -46,10 +49,10 @@ if __name__ == '__main__':
             row_key = candidate.id
             scores[row_key] = field.compare(value, candidate.value)
 
-
         score_df = pd.DataFrame({col_name: scores}).sort_index()
         score_df.index.names = features.index.names
-        score_df.to_csv(path.join(csv_directory, '%s_training_scores.csv' % field_name), encoding='utf-8')
+        score_df.to_csv(path.join(csv_directory, '%s_training_scores.%s.csv'
+                                  % (field_name, token)), encoding='utf-8')
 
         col_name = "%s_value" % field_name
         texts = {}
@@ -60,4 +63,7 @@ if __name__ == '__main__':
 
         value_df = pd.DataFrame({col_name: texts}).sort_index()
         value_df.index.names = features.index.names
-        value_df.to_csv(path.join(csv_directory, '%s_training_value.csv' % field_name), encoding='utf-8')
+        value_df.to_csv(path.join(csv_directory, '%s_training_value.%s.csv'
+                                  % (field_name, token)), encoding='utf-8')
+
+    print("Candidates exported. Token: %s" % token)
