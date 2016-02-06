@@ -112,7 +112,6 @@ class ModelWrapper(BaseEstimator):
     def score(self, X, y):
         y_pred = self.predict(X)
         scores = []
-
         for actual, pred in zip(y, y_pred):
             score = self.field.compare(actual, pred)
             if score > self.threshold:

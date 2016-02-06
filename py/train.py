@@ -67,7 +67,7 @@ if __name__ == "__main__":
     gs = GridSearchCV(wrapper, param_grid=model_def['parameter_grid'], cv=model_def['folds'])
     gs.fit(X, y)
 
-    with open(os.path.join(settings.get_directory('model'), '%s.pkl' % args.model_file), 'w') as f:
+    with open(os.path.join(settings.get_directory('pickle'), '%s.pkl' % args.model_file), 'w') as f:
         pickle.dump(gs.best_estimator_, f)
 
     print gs.grid_scores_

@@ -6,8 +6,6 @@ from sqlalchemy.orm import joinedload
 from os import path
 import uuid
 
-
-
 if __name__ == '__main__':
     parser = ArgumentParser(description='Compute features for lines')
     parser.add_argument('--settings', help='the path to the settings file',

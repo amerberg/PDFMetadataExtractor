@@ -1,14 +1,15 @@
-from candidate import *
+from candidate import CandidateFinder, Candidate
+from feature import Feature
 import re
 
 class LabelCandidateFinder(CandidateFinder):
 
-    def __init__(self, field, gid, pattern_builder, max_xgap=10000, max_ygap=10000, bbox=None):
+    def __init__(self, field, fid, pattern_builder, max_xgap=10000, max_ygap=10000, bbox=None):
         self._max_xgap = max_xgap
         self._max_ygap = max_ygap
         self._counts = {}
         self._bbox = bbox if bbox else [0, 0, 10000, 10000]
-        CandidateFinder.__init__(self, field, gid, pattern_builder)
+        CandidateFinder.__init__(self, field, fid, pattern_builder)
 
     def match_labels(self, document):
         labels = self.field.labels
@@ -16,7 +17,8 @@ class LabelCandidateFinder(CandidateFinder):
         bbox = self._bbox
 
         for line in document.get_lines():
-            if (bbox[0] <= line.x0 and line.x1 <= bbox[2] and bbox[1] <= line.y0 and line.y1 <= bbox[3]):
+            if (bbox[0] <= line.x0 and line.x1 <= bbox[2] and
+                        bbox[1] <= line.y0 and line.y1 <= bbox[3]):
                 match = re.search(pattern, line.text)
                 if match:
                     yield (line, match.span(0))
@@ -81,7 +83,7 @@ class LabelCandidateFinder(CandidateFinder):
             for match in h_match:
                 if match and len(match):
                     try:
-                        candidates.append(LabelCandidate(h_line, field, match, self.gid, self._counts[document.id], line))
+                        candidates.append(LabelCandidate(h_line, field, match, self.fid, self._counts[document.id], line))
                         self._counts[document.id] += 1
                         # shouldn't have more than one horizontal match
                         break
@@ -91,7 +93,7 @@ class LabelCandidateFinder(CandidateFinder):
             for match in v_match:
                 if match and len(match):
                     try:
-                        candidates.append(LabelCandidate(next_vertical, field, match, self.gid, self._counts[document.id], line))
+                        candidates.append(LabelCandidate(next_vertical, field, match, self.fid, self._counts[document.id], line))
                         self._counts[document.id] += 1
                     except Exception:
                         pass
@@ -103,3 +105,23 @@ class LabelCandidate(Candidate):
         self.label_offset_x = label_line.x0 - line.x0
         self.label_offset_y = label_line.y0 - line.x0
         Candidate.__init__(self, line, field, match, generator_id, num)
+
+class LabelOffsetX(Feature):
+    def compute(self, candidates):
+        offsets = {}
+        for candidate in candidates:
+            if isinstance(candidate, LabelCandidate):
+                offsets[candidate.id] = candidate.label_line.x0 - candidate.line.x0
+            else:
+                offsets[candidate.id] = 0
+        return offsets
+
+class LabelOffsetY(Feature):
+    def compute(self, candidates):
+        offsets = {}
+        for candidate in candidates:
+            if isinstance(candidate, LabelCandidate):
+                offsets[candidate.id] = candidate.label_line.y0 - candidate.line.y0
+            else:
+                offsets[candidate.id] = 0
+        return offsets

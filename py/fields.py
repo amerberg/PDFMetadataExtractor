@@ -39,8 +39,8 @@ class DateField(Field):
                 for error, correction in r:
                     new_text = re.sub(error, correction, new_text)
                 d = parse(new_text).date()
-                # TODO: leave option for future years
 
+                #TODO: this isn't the right solution in general, but it does what I need now
                 if self.end and d > self.end:
                     d = date(year=d.year-100, month=d.month, day=d.day)
                 return d
@@ -50,7 +50,8 @@ class DateField(Field):
         if not re.search(r"[A-Z][a-z]{2}", text):
             text = re.sub(r"\s+", "", text)
         # Get rid of punctuation noise from scanning
-        return str(text).translate(None, r",.'`")
+        preprocessed=str(text).translate(None, r",.'`")
+        return preprocessed
 
 
 class HumanNameField(Field):

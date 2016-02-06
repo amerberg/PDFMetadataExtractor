@@ -1,15 +1,15 @@
 from feature import Feature
 import re
 
-class lower_left_x(Feature):
+class LowerLeftX(Feature):
    def compute(self, candidates):
         return {candidate.id: candidate.line.x0 for candidate in candidates}
 
-class lower_left_y(Feature):
+class LowerLeftY(Feature):
     def compute(self, candidates):
         return {candidate.id: candidate.line.y0 for candidate in candidates}
 
-class chars_in_string(Feature):
+class CharsInString(Feature):
     def __init__(self, field, string):
         self._string = string
         Feature.__init__(self, field)
@@ -17,46 +17,46 @@ class chars_in_string(Feature):
     def compute(self, candidates):
         return {candidate.id: sum([candidate.value.count(c) for c in self._string]) for candidate in candidates}
 
-class word_count(Feature):
+class WordCount(Feature):
     def compute(self, candidates):
         return {candidate.id: len(candidate.value.split()) for candidate in candidates}
 
-class line_height(Feature):
+class LineHeight(Feature):
     def compute(self, candidates):
         return {candidate.id: candidate.line.y1 - candidate.line.y0 for candidate in candidates}
 
-class x_box(Feature):
+class XBox(Feature):
     def compute(self, candidates):
         return {candidate.id: candidate.line.box.x0 - candidate.line.x0 for candidate in candidates}
 
-class y_box(Feature):
+class YBox(Feature):
     def compute(self, candidates):
         return {candidate.id: candidate.line.y1 - candidate.line.box.y1 for candidate in candidates}
 
-class page_num(Feature):
+class PageNum(Feature):
     def compute(self, candidates):
         return {candidate.id: candidate.line.page for candidate in candidates}
 
-class all_caps_word_count(Feature):
+class AllCapsWordCount(Feature):
     def compute(self, candidates):
         return {candidate.id: len([w for w in candidate.match.split() if w.isupper()]) for candidate in candidates}
 
-class init_caps_word_count(Feature):
+class InitCapsWordCount(Feature):
     def compute(self, candidates):
         return {candidate.id: len([w for w in candidate.match.split()
                                      if w[0].isupper() and w[1:].islower()])
                 for candidate in candidates}
 
-class init_lower_word_count(Feature):
+class InitLowerWordCount(Feature):
     def compute(self, candidates):
         return {candidate.id: len([w for w in candidate.match.split() if w.islower()]) for candidate in candidates}
 
-class box_rank(Feature):
+class BoxRank(Feature):
     def compute(self, candidates):
         return {candidate.id: len([b for b in candidate.line.document.get_boxes() if b.y1 > candidate.line.box.y1
                     and b.page == candidate.line.page]) for candidate in candidates}
 
-class dict_word_count(Feature):
+class DictWordCount(Feature):
     def __init__(self, field, word_file):
         with open(word_file, 'r') as f:
             words = f.readlines()
@@ -71,7 +71,7 @@ class dict_word_count(Feature):
             result[candidate.id] = len([w for w in line_words if w.lower() in self._words])
         return result
 
-class box_phrases(Feature):
+class BoxPhrases(Feature):
     def __init__(self, field, phrases):
         self._phrases = phrases
         Feature.__init__(self, field)
@@ -87,7 +87,7 @@ class box_phrases(Feature):
 
         return result
 
-class contains_string(Feature):
+class ContainsString(Feature):
     def __init__(self, field, string):
         self._string = string
         Feature.__init__(self, field)
@@ -95,20 +95,20 @@ class contains_string(Feature):
     def compute(self, candidates):
         return {candidate.id: int(self._string in candidate.line.text) for candidate in candidates}
 
-class length(Feature):
+class Length(Feature):
     def compute(self, candidates):
         return {candidate.id: len(candidate.value) for candidate in candidates}
 
-class digit_count(Feature):
+class DigitCount(Feature):
     def compute(self, candidates):
         return {candidate.id: sum([c.isdigit() for c in candidate.value]) for candidate in candidates}
 
-class alpha_count(Feature):
+class AlphaCount(Feature):
     def compute(self, candidates):
         return {candidate.id: sum([c.isalpha() for c in candidate.value]) for candidate in candidates}
 
 
-class rank_value(Feature):
+class RankValue(Feature):
     def __init__(self, field, reverse=False):
         self.reverse = reverse
         Feature.__init__(self, field)
@@ -116,3 +116,7 @@ class rank_value(Feature):
     def compute(self, candidates):
         values = sorted(list({c.value for c in candidates}), reverse=self.reverse)
         return {c.id: values.index(c.value) for c in candidates}
+
+class FinderId(Feature):
+    def compute(self, candidates):
+        return {candidate.id: candidate.finder_id() for candidate in candidates}
