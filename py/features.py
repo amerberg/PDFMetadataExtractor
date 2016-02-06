@@ -63,20 +63,22 @@ class DictWordCount(Feature):
         with open(word_file, 'r') as f:
             words = f.readlines()
         words = [w.strip() for w in words if w.islower()]
-        self._words = words
+        self._dict_words = words
         Feature.__init__(self, field)
 
     def _is_dict_word(self, word):
-        dict_words = self._words
-
-
-
+        word = word.lower()
+        dict_words = self._dict_words
+        ind = bisect.bisect_left(dict_words, word)
+        if ind != len(dict_words) and dict_words[ind] == word:
+            return True
+        return False
 
     def compute(self, candidates):
         result = {}
         for candidate in candidates:
             line_words = [w.strip("\"';.:.!?") for w in candidate.value.split()]
-            result[candidate.id] = len([w for w in line_words if w.lower() in self._words])
+            result[candidate.id] = len([w for w in line_words if self._is_dict_word(w.lower())])
         return result
 
 class BoxPhrases(Feature):
