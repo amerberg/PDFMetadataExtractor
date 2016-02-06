@@ -31,10 +31,13 @@ class Settings:
 
     def engine(self):
         db = self._data['db']
-        return create_engine("%s://%s:%s@%s:%d/%s?charset=utf8" % (db['backend'],
-                             db['username'], db['password'],
-                             db['server'], db['port'],
-                             db['name']))
+        address = "%s://%s:%s@%s:%d/%s" % (db['backend'], db['username'],
+                                           db['password'], db['server'],
+                                           db['port'], db['name'])
+        if "charset" in db:
+            address += "?charset=%s" % db['charset']
+        return create_engine(address)
+
     def _set_files(self):
         files = collections.defaultdict(dict, self._data['files'])
         self._files = {key: self.resolve_path(value)
