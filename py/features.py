@@ -1,5 +1,6 @@
 from feature import Feature
 import re
+import bisect
 
 class LowerLeftX(Feature):
    def compute(self, candidates):
@@ -58,16 +59,23 @@ class BoxRank(Feature):
 
 class DictWordCount(Feature):
     def __init__(self, field, word_file):
+        word_file = field.settings.resolve_path(word_file)
         with open(word_file, 'r') as f:
             words = f.readlines()
         words = [w.strip() for w in words if w.islower()]
         self._words = words
         Feature.__init__(self, field)
 
+    def _is_dict_word(self, word):
+        dict_words = self._words
+
+
+
+
     def compute(self, candidates):
         result = {}
         for candidate in candidates:
-            line_words = [w.strip("\"';.:.!?") for w in candidate.match.split()]
+            line_words = [w.strip("\"';.:.!?") for w in candidate.value.split()]
             result[candidate.id] = len([w for w in line_words if w.lower() in self._words])
         return result
 

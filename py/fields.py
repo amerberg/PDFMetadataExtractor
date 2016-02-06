@@ -3,6 +3,7 @@ from sqlalchemy import String, Date
 from dateutil.parser import parse
 from datetime import date
 from fuzzywuzzy import fuzz
+import bisect
 
 from field import Field
 
@@ -58,22 +59,49 @@ class HumanNameField(Field):
     col_type = String(255)
     patterns = [r"[A-Za-z01\-\s,'.]+"]
 
+    def __init__(self, settings, name, data, first_name_list=None):
+        if first_name_list:
+            first_name_list = settings.resolve_path(first_name_list)
+            with open(first_name_list, 'r') as f:
+                self._first_name_list = f.read().splitlines()
+        else:
+            self._first_name_list = []
+        Field.__init__(self, settings, name, data)
+
+
     def get_value(self, text):
         #Get rid of extra spaces
         text = re.sub(r'\s+', ' ', text)
         #See if it's "Lastname, Firstname"
         result = re.search(r"([A-Za-z01\-\s']+)[,.]\s*([A-Za-z01\-\s']+.)", text)
         try:
-            name = "%s %s" % (result.group(2), result.group(1))
+            name = " ".join([result.group(2), result.group(1)])
         except AttributeError:
-            # Maybe it's a name in "Firstname Lastname" format
-            name = text
+            #Maybe OCR missed a comma...
+            words = text.split(" ")
+            if len(words) == 3 and len(words[2].strip('.,')) == 1:
+                #"Lastname Firstname M."
+                name = " ".join([words[1], words[2], words[0]])
+            elif len(words) == 2 and self._is_first_name(words[1]) and\
+                    not self._is_first_name(words[0]):
+                name = " ".join([words[1], words[0]])
+            else:
+                # Assume it's just a name in "Firstname Lastname" format
+                name = text
         #Maintain case unless it's all-caps
         if name.isupper():
             return name.title()
         else:
             return name
 
+
+    def _is_first_name(self, word):
+        names = self._first_name_list
+        word = word.lower()
+        ind = bisect.bisect_left(names, word)
+        if ind != len(names) and names[ind] == word:
+            return True
+        return False
 
     def compare(self, value1, value2):
         try:
