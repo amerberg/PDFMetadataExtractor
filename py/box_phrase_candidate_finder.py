@@ -72,31 +72,3 @@ class BoxPhraseCandidateFinder(CandidateFinder):
                     pass
 
         return candidates
-
-
-class LabelCandidate(Candidate):
-    def __init__(self, line, field, match, generator_id, num, label_line):
-        self.label_line = label_line
-        self.label_offset_x = label_line.x0 - line.x0
-        self.label_offset_y = label_line.y0 - line.x0
-        Candidate.__init__(self, line, field, match, generator_id, num)
-
-class LabelOffsetX(Feature):
-    def compute(self, candidates):
-        offsets = {}
-        for candidate in candidates:
-            if isinstance(candidate, LabelCandidate):
-                offsets[candidate.id] = candidate.label_line.x0 - candidate.line.x0
-            else:
-                offsets[candidate.id] = 0
-        return offsets
-
-class LabelOffsetY(Feature):
-    def compute(self, candidates):
-        offsets = {}
-        for candidate in candidates:
-            if isinstance(candidate, LabelCandidate):
-                offsets[candidate.id] = candidate.label_line.y0 - candidate.line.y0
-            else:
-                offsets[candidate.id] = 0
-        return offsets
