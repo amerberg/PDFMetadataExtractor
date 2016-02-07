@@ -2,13 +2,15 @@ from candidate import CandidateFinder, Candidate
 from feature import Feature
 import re
 
+MAX_LENGTH = 10000
+
 class LabelCandidateFinder(CandidateFinder):
 
-    def __init__(self, field, fid, max_xgap=10000, max_ygap=10000, bbox=None):
+    def __init__(self, field, fid, max_xgap=MAX_LENGTH, max_ygap=MAX_LENGTH, bbox=None):
         self._max_xgap = max_xgap
         self._max_ygap = max_ygap
         self._counts = {}
-        self._bbox = bbox if bbox else [0, 0, 10000, 10000]
+        self._bbox = bbox if bbox else [0, 0, MAX_LENGTH, MAX_LENGTH]
         CandidateFinder.__init__(self, field, fid)
 
     def match_labels(self, document):
@@ -113,7 +115,7 @@ class LabelOffsetX(Feature):
             if isinstance(candidate, LabelCandidate):
                 offsets[candidate.id] = candidate.label_line.x0 - candidate.line.x0
             else:
-                offsets[candidate.id] = 0
+                offsets[candidate.id] = - MAX_LENGTH
         return offsets
 
 class LabelOffsetY(Feature):
@@ -123,5 +125,5 @@ class LabelOffsetY(Feature):
             if isinstance(candidate, LabelCandidate):
                 offsets[candidate.id] = candidate.label_line.y0 - candidate.line.y0
             else:
-                offsets[candidate.id] = 0
+                offsets[candidate.id] = - MAX_LENGTH
         return offsets

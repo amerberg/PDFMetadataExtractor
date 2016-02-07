@@ -1,6 +1,7 @@
 from candidate import CandidateFinder, Candidate
-from feature import Feature
 import re
+
+MAX_LENGTH = 10000
 
 class BoxPhraseCandidateFinder(CandidateFinder):
     """Find candidates by presence of phrases in their box.
@@ -8,8 +9,8 @@ class BoxPhraseCandidateFinder(CandidateFinder):
 
     """
     def __init__(self, field, fid, phrases, candidate_lines,
-                 bbox=None, min_height=0, max_height=10000, min_width=0,
-                 max_width=10000, min_page=0, max_page=None):
+                 bbox=None, min_height=0, max_height=MAX_LENGTH, min_width=0,
+                 max_width=MAX_LENGTH, min_page=0, max_page=None):
         self._phrases = phrases
         self._candidate_lines = candidate_lines
         self._counts = {}
@@ -19,7 +20,7 @@ class BoxPhraseCandidateFinder(CandidateFinder):
         self._max_width = max_width
         self._min_page = min_page
         self._max_page = max_page
-        self._bbox = bbox if bbox else [0, 0, 10000, 10000]
+        self._bbox = bbox if bbox else [0, 0, MAX_LENGTH, MAX_LENGTH]
         CandidateFinder.__init__(self, field, fid)
 
     def _boxes_in_bbox(self, document):
