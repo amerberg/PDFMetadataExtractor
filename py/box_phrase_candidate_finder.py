@@ -46,9 +46,9 @@ class BoxPhraseCandidateFinder(CandidateFinder):
     def _allowed_page(self, box):
         """Determine whether a given box is on a page within search bounds."""
         if self._max_page:
-            return self._min_page < box.page < self._max_page
+            return self._min_page <= box.page <= self._max_page
         else:
-            return self._min_page < box.page
+            return self._min_page <= box.page
 
     def _has_phrase(self, box):
         """Determine whether a box has the sought phrases."""
