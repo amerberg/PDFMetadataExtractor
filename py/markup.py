@@ -1,4 +1,4 @@
-from settings import load_settings, default_settings_file
+from settings import Settings
 from argparse import ArgumentParser
 import os
 
@@ -21,6 +21,7 @@ def make_rectangle(canvas, bbox):
 
 
 def mark_pdf(clean_path, marked_path):
+    """Draw rectangles around the boxes, lines, and characters in a document."""
     try:
         with open(os.path.join(clean_path)) as fp:
             parser = PDFParser(fp)
@@ -76,18 +77,10 @@ if __name__ == "__main__":
                            default=None)
 
     args = argparser.parse_args()
-    settings_file = args.settings if args.settings else default_settings_file()
-    settings = load_settings(settings_file)
+    settings = Settings(args.settings)
 
-    pdf_dir = settings['pdf_directory']
-    marked_pdf_dir = settings['marked_pdf_directory']
-
-    if not os.path.isabs(pdf_dir):
-        pdf_dir = os.path.join(os.path.split(settings_file)[0],
-                               pdf_dir)
-    if not os.path.isabs(marked_pdf_dir):
-        marked_pdf_dir = os.path.join(os.path.split(settings_file)[0],
-                               marked_pdf_dir)
+    pdf_dir = settings.get_directory('pdf')
+    marked_pdf_dir = settings.get_directory('marked_pdf')
 
     clean_path = os.path.join(pdf_dir, args.filename)
     marked_path = os.path.join(marked_pdf_dir, args.filename)
