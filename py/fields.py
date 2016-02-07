@@ -97,6 +97,8 @@ class HumanNameField(Field):
             elif len(words) == 2 and self._is_first_name(words[1]) and\
                     not self._is_first_name(words[0]):
                 name = " ".join([words[1], words[0]])
+            elif len(words) == 1:
+                name = self._break_single_name(words[0])
             else:
                 # Assume it's just a name in "Firstname Lastname" format
                 name = text
@@ -106,15 +108,34 @@ class HumanNameField(Field):
         else:
             return name
 
-
     def _is_first_name(self, word):
         """Check whether a given word appears in the list of first names."""
         names = self._first_name_list
         word = word.lower()
         ind = bisect.bisect_left(names, word)
-        if ind != len(names) and names[ind] == word:
+        if ind < len(names) and names[ind] == word:
             return True
         return False
+
+    def _break_single_name(self, word):
+        """Given a single word, try to break it into first and last names."""
+        #First see if the beginning of word is in the name list.
+        lower = word.lower()
+        names = self._first_name_list
+        ind = bisect.bisect_left(names, lower)
+        if ind < len(names) and lower.startswith(names[ind]):
+            length = len(names[ind])
+            return word[:length] + " " + word[length:]
+        #Now try the end of the string.
+        max_valid = 0
+        for length in range(2, len(word)):
+            if self._is_first_name(word[-length:]):
+                max_valid = length
+        if max_valid > 0:
+            return word[-max_valid:] + " " + word[:-max_valid]
+
+        return word
+
 
     def compare(self, value1, value2):
         """Use the Levenshtein-based similarity measure."""
