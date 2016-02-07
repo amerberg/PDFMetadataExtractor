@@ -4,13 +4,25 @@ import re
 MAX_LENGTH = 10000
 
 class BoxPhraseCandidateFinder(CandidateFinder):
-    """Find candidates by presence of phrases in their box.
-
-
-    """
+    """Find candidates by presence of certain phrases in their box."""
     def __init__(self, field, fid, phrases, candidate_lines,
                  bbox=None, min_height=0, max_height=MAX_LENGTH, min_width=0,
                  max_width=MAX_LENGTH, min_page=0, max_page=None):
+        """ Set parameters for the candidate search.
+
+        :param field: The field to search for.
+        :param fid: The finder id of this object.
+        :param phrases: The phrases to look for in the box.
+        :param candidate_lines: The indices of the lines to be designated
+         candidates.
+        :param bbox: The bounding box within which to search.
+        :param min_height: The minimum height box to consider.
+        :param max_height: The maximum height box to consider.
+        :param min_width: The minimum width box to consider.
+        :param max_width: The maximum width box to consider.
+        :param min_page: The minimum page number to look on.
+        :param max_height: The maximum page number to look on.
+        """
         self._phrases = phrases
         self._candidate_lines = candidate_lines
         self._counts = {}
@@ -32,12 +44,14 @@ class BoxPhraseCandidateFinder(CandidateFinder):
                 box.y1 <= bbox[3] and self._allowed_page(box)]
 
     def _allowed_page(self, box):
+        """Determine whether a given box is on a page within search bounds."""
         if self._max_page:
             return self._min_page < box.page < self._max_page
         else:
             return self._min_page < box.page
 
     def _has_phrase(self, box):
+        """Determine whether a box has the sought phrases."""
         lines = box.get_lines()
         pattern = self.field.settings.pattern_builder.list_pattern(self._phrases)
         for line in lines:
@@ -46,6 +60,7 @@ class BoxPhraseCandidateFinder(CandidateFinder):
         return False
 
     def get_candidates(self, document):
+        """Get all candidates for a document."""
         if not hasattr(document, "id"):
             document.id = 0
         self._counts[document.id] = 0

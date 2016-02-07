@@ -5,6 +5,7 @@ from fields import *
 
 # TODO: allow configuration of string lengths
 def document_table(fields, metadata):
+    """Generate the table to store the Document class."""
     return Table('document', metadata,
                  Column('id', Integer, primary_key=True),
                  Column('filename', String(255), unique=True),
@@ -13,7 +14,9 @@ def document_table(fields, metadata):
                  *(Column(fn, field.col_type) for fn, field in fields.iteritems())
               )
 
+
 def box_table(metadata):
+    """Generate the table to store the Box class."""
     return Table('box', metadata,
                  Column('id', Integer, primary_key=True),
                  Column('document_id', Integer, ForeignKey('document.id')),
@@ -25,7 +28,9 @@ def box_table(metadata):
                  Column('vertical', Boolean)
                  )
 
+
 def line_table(metadata):
+    """Generate the table to store the Line class."""
     return Table('line', metadata,
                  Column('id', Integer, primary_key=True),
                  Column('document_id', Integer, ForeignKey('document.id')),

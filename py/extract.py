@@ -13,6 +13,15 @@ import os
 
 
 def extract_pdf_data(fp, labels={}, session=None):
+    """ Get PDF data from a file.
+
+    TODO why is this a standalone function?
+    :param fp: A file pointer to the PDF.
+    :param labels: Correct metadata labels for this document.
+    :param session: A SQLAlchemy session, for saving.
+    :return: A Document object.
+    """
+
     filename = os.path.split(fp.name)[-1]
     parser = PDFParser(fp)
     pdf = PDFDocument(parser)

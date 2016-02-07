@@ -7,13 +7,27 @@ MAX_LENGTH = 10000
 class LabelCandidateFinder(CandidateFinder):
 
     def __init__(self, field, fid, max_xgap=MAX_LENGTH, max_ygap=MAX_LENGTH, bbox=None):
+        """Set up parameters for the candidate search.
+
+        :param field: The field to find.
+        :param fid: The finder id of this object.
+        :param max_xgap: The largest horizontal gap between label and candidate.
+        :param max_ygap: The largest vertical gap between label and candidate.
+        :param bbox: The bounding box in which to search.
+        :return:
+        """
         self._max_xgap = max_xgap
         self._max_ygap = max_ygap
         self._counts = {}
         self._bbox = bbox if bbox else [0, 0, MAX_LENGTH, MAX_LENGTH]
         CandidateFinder.__init__(self, field, fid)
 
-    def match_labels(self, document):
+    def _match_labels(self, document):
+        """Find lines containing field labels.
+
+        :param document: A Document object.
+        :return: Generator of 2-tuples of lines and (start, end) of the match.
+        """
         labels = self.field.labels
         pattern = self.field.settings.pattern_builder.list_pattern(labels)
         bbox = self._bbox
@@ -57,12 +71,17 @@ class LabelCandidateFinder(CandidateFinder):
         return next_hor, next_vert
 
     def get_candidates(self, document):
+        """ Get candidates for a document.
+
+        :param document: A Document object.
+        :return: A list of LabelCandidates.
+        """
         if not hasattr(document, "id"):
             document.id = 0
         self._counts[document.id] = 0
 
         strip_labels = self.field.settings.strip_labels
-        results = [r for r in self.match_labels(document)]
+        results = [r for r in self._match_labels(document)]
         candidates = []
         field = self.field
 
@@ -102,23 +121,34 @@ class LabelCandidateFinder(CandidateFinder):
         return candidates
 
 class LabelCandidate(Candidate):
+    """A class of Candidates storing information specific to labeled fields."""
     def __init__(self, line, field, match, generator_id, num, label_line):
+        """Store the label line and call parent constructor."""
         self.label_line = label_line
-        self.label_offset_x = label_line.x0 - line.x0
-        self.label_offset_y = label_line.y0 - line.x0
         Candidate.__init__(self, line, field, match, generator_id, num)
 
 class LabelOffsetX(Feature):
+    """The horizontal offset between a candidate's line and its label.
+
+    This is approximate since we don't store character positions in the database.
+    We just go with the distance between left sides.
+    """
     def compute(self, candidates):
         offsets = {}
         for candidate in candidates:
             if isinstance(candidate, LabelCandidate):
                 offsets[candidate.id] = candidate.label_line.x0 - candidate.line.x0
             else:
+                # For non-label candidates, choose a unique value.
                 offsets[candidate.id] = - MAX_LENGTH
         return offsets
 
 class LabelOffsetY(Feature):
+    """The vertical offset between a candidate's line and its label.
+
+    This is approximate since we don't store character positions in the database.
+    We just go with the distance between bottoms.
+    """
     def compute(self, candidates):
         offsets = {}
         for candidate in candidates:

@@ -1,7 +1,6 @@
 from settings import Settings
 from argparse import ArgumentParser
 from extract import extract_pdf_data
-
 from pdf_classes import *
 import os
 
@@ -14,12 +13,14 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     settings = Settings(args.settings)
-    metadata=settings.map_tables()
+    metadata = settings.map_tables()
 
 
     if args.schema:
+        #Just install the schema.
         metadata.create_all(settings.engine())
     else:
+        #Extract all of the PDFs in the pdf directory to the database.
         session = settings.session()
         pdf_dir = settings.get_directory('pdf')
 

@@ -1,3 +1,5 @@
+"""Find candidates and export all information needed for training and prediction."""
+
 from settings import Settings
 from argparse import ArgumentParser
 from pdf_classes import *
@@ -12,18 +14,20 @@ if __name__ == '__main__':
                         default=None)
     parser.add_argument('--fields', help='the fields to generate data for',
                         nargs='*', default=None)
-
     args = parser.parse_args()
+
     settings = Settings(args.settings)
     settings.map_tables()
     session = settings.session()
     csv_directory = settings.get_directory('csv')
     token = uuid.uuid1()
 
+    #If field names have been specified on the command line, only export those ones.
     fields = settings.fields
     if args.fields is not None:
         fields = {name: field for name, field in fields.iteritems() if name in args.fields}
 
+    #Get all candidates for all fields.
     candidates = {field_name: [] for field_name in fields}
     for document in session.query(Document).options(joinedload(Document.lines))\
             .filter(Document.is_test == 0):
@@ -33,6 +37,7 @@ if __name__ == '__main__':
             doc_candidates = field.get_candidates(document)
             candidates[field_name].append(doc_candidates)
 
+    #For each field, compute features, scores, and values for candidates.
     for field_name, field in fields.iteritems():
         features = field.features_dataframe(candidates[field_name])
         features.to_csv(path.join(csv_directory, '%s_training_features.%s.csv'

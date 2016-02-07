@@ -15,8 +15,6 @@ if __name__ == "__main__":
                         default=None)
     parser.add_argument('--settings', help='the path to the settings file',
                         default=None)
-
-
     args = parser.parse_args()
 
     settings = Settings(args.settings)
@@ -40,6 +38,7 @@ if __name__ == "__main__":
 
     csv_dir = settings.get_directory('csv')
 
+    #Attempt to preload candidate data from CSV files.
     if model_def['token']:
         token = model_def['token']
         features = pd.read_csv(os.path.join(csv_dir, '%s_training_features.%s.csv'
@@ -52,7 +51,7 @@ if __name__ == "__main__":
         for document in session.query(Document).options(joinedload(Document.lines))\
                     .filter(Document.is_test == 0):
                 y.append(getattr(document, field_name))
-                # delete the field value from X to prevent cheating
+                # Delete the field value from X to prevent cheating.
                 delattr(document, field_name)
                 X.append(document)
                 try:
@@ -60,18 +59,21 @@ if __name__ == "__main__":
                     document.scores = {field_name: scores.xs(document.id, level='document', drop_level=False)}
                     document.values = {field_name: values.xs(document.id, level='document', drop_level=False)}
                 except KeyError as e:
-                    #nothing found, but set them to empty to avoid trying to compute again later
+                    #Nothing found, but set them to empty to avoid trying to compute again later.
                     document.features = {field_name: []}
                     document.scores = {field_name: []}
                     document.values = {field_name: []}
 
+    #Set up grid search cross-validation and fit the model.
     gs = GridSearchCV(wrapper, param_grid=model_def['parameter_grid'],
                       cv=model_def['folds'], n_jobs=n_jobs)
     gs.fit(X, y)
 
+    #Dump the best estimator to a pickle file.
     with open(os.path.join(settings.get_directory('pickle'), '%s.pkl' % args.model_file), 'w') as f:
         pickle.dump(gs.best_estimator_, f)
 
+    #Print some things.
     print gs.grid_scores_
     print gs.best_params_
     print gs.best_score_
