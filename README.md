@@ -59,5 +59,14 @@ The settings file should also specify the following keys:
         More information on these parameters is available in [SQLAlchemy documentation](http://docs.sqlalchemy.org/en/latest/core/engines.html).
 -   `extra_labels` - A list of label texts to be ignored for all fields. 
 
+##Usage
+Once the settings have been defined, the next step is to install the database schema.
+To do this, run the `py/setup.py` script with the `--schema` flag. 
+After the schema is installed, the PDF text and structure can be extracted to the database.
+The PDFs should be saved in the `pdf` directory specified in the setting file, and the `labels` file should specify correct field values for all files.
+Each key in the file should be a filename and values should be hashes of field_name/label pairs.
+Running `python py/setup.py` will extract the PDF data to the database.
+This may take a long time with a lot of files, but the extraction can be safely interrupted and restarted without causing any problems.
+
 
 More details will be provided very soon.
