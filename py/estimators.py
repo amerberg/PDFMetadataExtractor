@@ -5,8 +5,25 @@ import importlib
 
 
 class ModelWrapper(BaseEstimator):
-    def __init__(self, field, threshold=0,
+    """ Wraper class for sklearn regressors.
+
+    This class allows easy cross-validation with metrics directly relevant to
+    the metadata prediction problem, rather than the score regression problem,
+    which is only of indirect interest.
+    """
+
+    def __init__(self, field, threshold=1,
                  model_module="", model_class="", model_params={}):
+        """Set the field, threshold and model.
+
+
+        :param field: The field to estimate
+        :param threshold: The threshold above which partial credit should be granted.
+        :param model_module: The name of the module in which the regressor is defined.
+        :param model_class: The classname of the regressor.
+        :param model_params: A dictionary of model parameters.
+        :return: None
+        """
         self.field = field
         self._estimator_type = "text"
         self.threshold = threshold
@@ -16,6 +33,12 @@ class ModelWrapper(BaseEstimator):
 
 
     def get_features(self, X):
+        """ Get features for all candidates in a list of documents.
+
+        :param X: A list of documents.
+        :return: A pandas DataFrame of features.
+        """
+
         features = []
         for document in X:
             try:
@@ -27,6 +50,11 @@ class ModelWrapper(BaseEstimator):
         return result
 
     def get_scores(self, X):
+        """ Get match scores for all candidates in a list of documents.
+
+        :param X: A list of documents.
+        :return: A pandas DataFrame of scores.
+        """
         scores = []
         for document in X:
             try:
@@ -37,6 +65,11 @@ class ModelWrapper(BaseEstimator):
         return pd.concat([s for s in scores if len(s) > 0])
 
     def get_values(self, X):
+        """ Get the formatted values for the candidates in a document.
+
+        :param X: A list of documents.
+        :return: A pandas DataFrame of values.
+        """
         values = []
         for document in X:
             try:
@@ -48,6 +81,10 @@ class ModelWrapper(BaseEstimator):
         return pd.concat([f for f in values if len(f) > 0])
 
     def _get_data(self, document):
+        """ Get all candidates for a document and store important data.
+
+        :param document: A Document object.
+        """
         field = self.field
         field_name = field.name
 
@@ -85,12 +122,14 @@ class ModelWrapper(BaseEstimator):
             document.value = {field_name: values_series}
 
     def fit(self, X, y):
+        """Load, initialize, and fit the wrapped estimator"""
         module = importlib.import_module(self.model_module)
         func = getattr(module, self.model_class)
         self.model_ = func(**self.model_params)
         self.model_.fit(self.get_features(X), np.ravel(self.get_scores(X).values))
 
     def predict(self, X):
+        """Predict candidate scores and guess the highest-scoring one."""
         features = self.get_features(X)
         pred_scores = self.model_.predict(features)
         pred_scores = pd.Series(pred_scores, index=features.index)
@@ -110,6 +149,13 @@ class ModelWrapper(BaseEstimator):
         return np.array(y)
 
     def score(self, X, y):
+        """Compute an accuracy score for predictions.
+
+        "Partial credit" is awarded for matches scoring above self.threshold.
+        :param X: A list of documents.
+        :param y: A list-like object of values.
+        :return: A numerical score.
+        """
         y_pred = self.predict(X)
         scores = []
         for actual, pred in zip(y, y_pred):
@@ -120,6 +166,16 @@ class ModelWrapper(BaseEstimator):
         return sum(scores) / float(len([actual for actual in y if actual is not None]))
 
     def set_params(self, **params):
+        """Set parameters for the wrapper and the wrapped estimator.
+
+        This method is required for compatibility with GridSearchCV.
+        :param params: A dictionary of parameters for the wrapper and wrapped estimator.
+         If a key doesn't match the name of a wrapper parameter, it is assumed to be
+         for the wrapped estimator.
+         TODO: it would be better to do what sklearn's pipeline does and provide some
+         namespacing in case the wrapper and wrapped class share a parameter name
+        :return: self
+        """
         if not params:
             return self
         valid_params = self.get_params(deep=True)
