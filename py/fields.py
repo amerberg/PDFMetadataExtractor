@@ -9,6 +9,7 @@ from field import Field
 
 
 class DateField(Field):
+    """Field class for date fields"""
     patterns = [r"[\dIloO]{1,2}[/1Il-][\dIloO]{1,2}[/1Il-][\dIloO]{4}",
                  r"[\dIloO]{4}-[\dIloO]{2}-[\dIloO]{2}",
                  r"[\dIloO]{1,2}[/Il1-][\dIloO]{1,2}[/Il1-][\dIloO]{2}\b",
@@ -17,6 +18,7 @@ class DateField(Field):
     col_type = Date
 
     def __init__(self, settings, name, data, allowed_range=None):
+        """Set the allowed range if specified."""
         self.start = None
         self.end = None
         if allowed_range is not None:
@@ -24,7 +26,22 @@ class DateField(Field):
 
         Field.__init__(self, settings, name, data)
 
+
+    def preprocess(self, text):
+        """Get rid of extra spacing and punctuation."""
+        if not re.search(r"[A-Z][a-z]{2}", text):
+            text = re.sub(r"\s+", "", text)
+        # Sometimes we get extra punctuation from scanner noise.
+        preprocessed = str(text).translate(None, r",.'`")
+        return preprocessed
+
     def get_value(self, text):
+        """Match patterns, correct OCR substitutions, convert to date type.
+
+        :param text: preprocessed candidate text
+        :return: a date object corresponding to the given text.
+        """
+
         replacements = [[(r"([0oIl1]?[\doOIl])[/I1l-]([oIl0123]?[\doOIl])[/I1l-]([\doOIl]{4})", r"\1/\2/\3"),
                          (r"[Il]", "1"), (r"[oO]", "0"), (r"^1([3-9])", "\1")],
                         [(r"[Il]", "1"), (r"[oO]", "0")],
@@ -46,20 +63,14 @@ class DateField(Field):
                     d = date(year=d.year-100, month=d.month, day=d.day)
                 return d
 
-    def preprocess(self, text):
-        # Get rid of extra spacing
-        if not re.search(r"[A-Z][a-z]{2}", text):
-            text = re.sub(r"\s+", "", text)
-        # Get rid of punctuation noise from scanning
-        preprocessed=str(text).translate(None, r",.'`")
-        return preprocessed
-
 
 class HumanNameField(Field):
+    """ A field class for human names."""
     col_type = String(255)
     patterns = [r"[A-Za-z01\-\s,'.]+"]
 
     def __init__(self, settings, name, data, first_name_list=None):
+        """Get a first name list if necessary and call parent constructor."""
         if first_name_list:
             first_name_list = settings.resolve_path(first_name_list)
             with open(first_name_list, 'r') as f:
@@ -70,6 +81,7 @@ class HumanNameField(Field):
 
 
     def get_value(self, text):
+        """Normalize name to 'Firstname M Lastname' format."""
         #Get rid of extra spaces
         text = re.sub(r'\s+', ' ', text)
         #See if it's "Lastname, Firstname"
@@ -96,6 +108,7 @@ class HumanNameField(Field):
 
 
     def _is_first_name(self, word):
+        """Check whether a given word appears in the list of first names."""
         names = self._first_name_list
         word = word.lower()
         ind = bisect.bisect_left(names, word)
@@ -104,6 +117,7 @@ class HumanNameField(Field):
         return False
 
     def compare(self, value1, value2):
+        """Use the Levenshtein-based similarity measure."""
         try:
             return fuzz.ratio(value1, value2) / 100.
         except TypeError:

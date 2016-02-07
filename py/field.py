@@ -6,15 +6,24 @@ import pandas as pd
 
 
 class Field:
+    """The base class for metadata field types.
+
+    This class must be extended to provide functionality for specific datatypes.
+    It defines certain basic functionaity that is likely to be common to
+    various types.
+
+    """
     def __init__(self, settings, name, data):
+        """Set basic field properties."""
         self.name = name
         self.settings = settings
-        self.labels = collections.defaultdict(list, data)['labels']
+        self.labels = data['labels'] if 'labels' in data else []
         self._data = data
         self._load_features()
         self._load_candidate_finders()
 
     def _load_features(self):
+        """Load the fields features as defined in the settings."""
         self.features = {}
         infos = self._data['features']
         for name, info in infos.iteritems():
@@ -25,8 +34,9 @@ class Field:
             self.features[name] = func(self, **params)
 
     def _load_candidate_finders(self):
+        """Load the field's candidate finders as defined in the settings"""
         self._candidate_finders = {}
-        for num, name in enumerate(collections.defaultdict(dict, self._data)['candidate_finders']):
+        for num, name in enumerate(self._data['candidate_finders']):
             info = self._data['candidate_finders'][name]
             module = importlib.import_module(info['module'])
             cls = info['class']
@@ -35,32 +45,40 @@ class Field:
             self._candidate_finders[name] = func(self, num, self.settings.pattern_builder, **params)
 
     def get_candidates(self, document):
+        """Return all candidates identified by all of the candidate finders"""
         return sum([finder.get_candidates(document) for finder in self._candidate_finders.values()], [])
 
     @abc.abstractmethod
     def patterns(self):
+        """Abstract method returns a list of patterns that match field values."""
         return self.patterns
 
     def col_type(self):
+        """Return the database column type to be used to represent this field."""
         return self._col_type
 
-    def get_value(self, value):
-        return value
-
     def preprocess(self, text):
+        """Preprocess a string before looking for a value."""
         return text
 
     def find_value(self, text):
+        """Find a substring of a given string that likely to contain a field value"""
         for pattern in self.patterns:
             match = re.search(pattern, text)
             if match:
                 return match.group(0).strip()
         return None
 
+    def get_value(self, text):
+        """Converts text to a formatted value"""
+        return text
+
     def compare(self, value1, value2):
-        return value1 == value2
+        """Compare two different values of this field"""
+        return float(value1 == value2)
 
     def doc_features(self, candidates):
+        """Compute all features for a list of candidates."""
         result = {candidate.id: {} for candidate in candidates}
         for feature_name, feature in self.features.iteritems():
             values = feature.compute(candidates)
@@ -70,6 +88,12 @@ class Field:
         return result
 
     def features_dataframe(self, candidates_by_doc):
+        """Compute a dataframe of features for candidates.
+        :candidates_by_doc: A dictionary, whose keys are document ids and whose
+        values are lists of candidates in the corresponding documents.
+
+        """
+
         features = {}
         for candidates in candidates_by_doc:
             features.update(self.doc_features(candidates))
