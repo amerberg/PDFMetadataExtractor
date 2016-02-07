@@ -1,12 +1,21 @@
-db_backend: mysql+mysqlconnector
-db_username: root
-db_password: root
-db_server: localhost
-db_port: 3306
-db_name: metadata
+db:
+  backend: mysql+pymysql
+  username: root
+  password: root
+  server: localhost
+  port: 3306
+  name: my_database
+  charset: utf8
 
-pdf_directory: pdf
-marked_pdf_directory: marked_pdf
+directories:
+  pdf: pdf
+  marked_pdf: marked_pdf
+  csv: csv
+  model: models
+  pickle: pickle
+
+files:
+  label: labels.json
 
 substitutions:
   a: [e, o, s]
@@ -25,26 +34,65 @@ substitutions:
   F: [P]
   G: [C]
   M: [IVI]
-  O: [0, o]
+  O: [0, o, U]
   P: [F]
-  S: [s]
+  S: [s,O, o]
   W: [w, VV]
   ' ': ['  ', '   ']
 
 fields:
   patient_name:
-    type: name
-    labels: [Patient Name, Patient name, Patient]
-    patterns: ['[A-Za-z01\-\s,]+']
+    module: fields
+    class: HumanNameField
+    labels: ['Patient Name', 'Patient name', 'Patient:', 'Patient', 'Name:', 'Name', 'Encounters For']
     multiple: False
+    parameters:
+      first_name_list: name_list.txt
+    candidate_finders:
+      label:
+        module: label_candidate_finder
+        class: LabelCandidateFinder
+        parameters: {max_ygap: 100, bbox: [0, 0, 800, 1000]}
+    features:
+      lower_left_x: {module: features, class: LowerLeftX}
+      lower_left_y: {module: features, class: LowerLeftY}
+      space_count: {module: features, class: CharsInString, parameters: {string: " "}}
+      punctuation_count: {module: features, class: CharsInString, parameters: {string: ',.?!'}}
+      word_count: {module: features, class: WordCount}
+      line_height: {module: features, class: LineHeight}
+      x_box: {module: features, class: XBox}
+      y_box: {module: features, class: YBox}
+      page_num: {module: features, class: PageNum}
+      all_caps_word_count: {module: features, class: AllCapsWordCount}
+      init_caps_word_count: {module: features, class: InitCapsWordCount}
+      init_lower_word_count: {module: features, class: InitLowerWordCount}
+      box_rank: {module: features, class: BoxRank}
+      dict_word_count: {module: features, class: DictWordCount, parameters: {word_file: /usr/share/dict/words}}
+      contains_colon: {module: features, class: ContainsString, parameters: {string: ":"}}
+      length: {module: features, class: Length}
+      digit_count: {module: features, class: DigitCount}
+      alpha_count: {module: features, class: AlphaCount}
+      label_offset_x: {module: label_candidate_finder, class: LabelOffsetX}
+      label_offset_y: {module: label_candidate_finder, class: LabelOffsetY}
+      box_phrases_dob:
+        module: features
+        class: BoxPhrases
+        parameters:
+          phrases: ['DOB', 'D.O.B.', 'Date of Birth', 'Birthdate']
   date_of_birth:
-    type: date
-    labels: [Date of Birth, Date of birth, DOB, D.O.B.]
-    patterns: ['[01]?\d[/1][0-3]?\d[/1]\d{4}']
-    multiple: False
+    module: fields
+    class: DateField
+    labels: [Date of Birth, Date of birth, DOB, D.O.B., Birthdate]
+    features:
+      lower_left_x: {module: features, class: LowerLeftX}
+      lower_left_y: {module: features, class: LowerLeftY}
+      page_num: {module: features, class: PageNum}
+      box_rank: {module: features, class: BoxRank}
+      rank_value: {module: features, class: RankValue}
+    candidate_finders:
+      label:
+        module: label_candidate_finder
+        class: LabelCandidateFinder
+        parameters: {max_ygap: 100}
 
-ignore_fields:
-  sex:
-    labels: ['Sex']
-  mrn:
-    labels: ['MRN', 'Medical Record Number']
+extra_labels: [Sex, MRN, Medical Record Number, M.R.N., Encounter date, Encounter Date, Enc. Date, Enc date, Enc. date, Enc Date, Date, Age]
