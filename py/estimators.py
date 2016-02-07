@@ -176,6 +176,7 @@ class ModelWrapper(BaseEstimator):
          namespacing in case the wrapper and wrapped class share a parameter name
         :return: self
         """
+
         if not params:
             return self
         valid_params = self.get_params(deep=True)
