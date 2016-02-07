@@ -4,21 +4,21 @@ import re
 
 class LabelCandidateFinder(CandidateFinder):
 
-    def __init__(self, field, fid, pattern_builder, max_xgap=10000, max_ygap=10000, bbox=None):
+    def __init__(self, field, fid, max_xgap=10000, max_ygap=10000, bbox=None):
         self._max_xgap = max_xgap
         self._max_ygap = max_ygap
         self._counts = {}
         self._bbox = bbox if bbox else [0, 0, 10000, 10000]
-        CandidateFinder.__init__(self, field, fid, pattern_builder)
+        CandidateFinder.__init__(self, field, fid)
 
     def match_labels(self, document):
         labels = self.field.labels
-        pattern = self._pattern_builder.list_pattern(labels)
+        pattern = self.field.settings.pattern_builder.list_pattern(labels)
         bbox = self._bbox
 
         for line in document.get_lines():
             if (bbox[0] <= line.x0 and line.x1 <= bbox[2] and
-                        bbox[1] <= line.y0 and line.y1 <= bbox[3]):
+                    bbox[1] <= line.y0 and line.y1 <= bbox[3]):
                 match = re.search(pattern, line.text)
                 if match:
                     yield (line, match.span(0))

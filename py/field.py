@@ -42,7 +42,7 @@ class Field:
             cls = info['class']
             params = info['parameters']
             func = getattr(module, cls)
-            self._candidate_finders[name] = func(self, num, self.settings.pattern_builder, **params)
+            self._candidate_finders[name] = func(self, num, **params)
 
     def get_candidates(self, document):
         """Return all candidates identified by all of the candidate finders"""

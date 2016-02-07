@@ -3,8 +3,11 @@ from feature import Feature
 import re
 
 class BoxPhraseCandidateFinder(CandidateFinder):
+    """Find candidates by presence of phrases in their box.
 
-    def __init__(self, field, fid, pattern_builder, phrases, candidate_lines,
+
+    """
+    def __init__(self, field, fid, phrases, candidate_lines,
                  bbox=None, min_height=0, max_height=10000, min_width=0,
                  max_width=10000, min_page=0, max_page=None):
         self._phrases = phrases
@@ -17,10 +20,10 @@ class BoxPhraseCandidateFinder(CandidateFinder):
         self._min_page = min_page
         self._max_page = max_page
         self._bbox = bbox if bbox else [0, 0, 10000, 10000]
-        CandidateFinder.__init__(self, field, fid, pattern_builder)
+        CandidateFinder.__init__(self, field, fid)
 
     def _boxes_in_bbox(self, document):
-        "Get all boxes in the bounding box for this document"
+        """"Get all boxes in the bounding box for this document"""
         bbox = self._bbox
         boxes = document.get_boxes()
         return [box for box in boxes if bbox[0] <= box.x0 and
@@ -35,12 +38,11 @@ class BoxPhraseCandidateFinder(CandidateFinder):
 
     def _has_phrase(self, box):
         lines = box.get_lines()
-        pattern = self._pattern_builder.list_pattern(self._phrases)
+        pattern = self.field.settings.pattern_builder.list_pattern(self._phrases)
         for line in lines:
             if re.search(pattern, line.text) is not None:
                 return True
         return False
-
 
     def get_candidates(self, document):
         if not hasattr(document, "id"):

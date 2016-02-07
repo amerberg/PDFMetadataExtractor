@@ -2,8 +2,7 @@ import abc
 
 
 class CandidateFinder:
-    def __init__(self, field, fid, pattern_builder):
-        self._pattern_builder = pattern_builder
+    def __init__(self, field, fid):
         self.field = field
         self.fid = fid
 
