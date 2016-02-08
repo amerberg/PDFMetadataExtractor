@@ -14,6 +14,8 @@ if __name__ == '__main__':
                         default=None)
     parser.add_argument('--fields', help='the fields to generate data for',
                         nargs='*', default=None)
+    parser.add_argument('--test', help='flag indicating that test set should be used',
+                        action='store_true', default=None)
     args = parser.parse_args()
 
     settings = Settings(args.settings)
@@ -21,6 +23,8 @@ if __name__ == '__main__':
     session = settings.session()
     csv_directory = settings.get_directory('csv')
     token = uuid.uuid1()
+
+    dataset = "test" if args.test else "training"
 
     #If field names have been specified on the command line, only export those ones.
     fields = settings.fields
@@ -30,7 +34,7 @@ if __name__ == '__main__':
     #Get all candidates for all fields.
     candidates = {field_name: [] for field_name in fields}
     for document in session.query(Document).options(joinedload(Document.lines))\
-            .filter(Document.is_test == 0):
+            .filter(Document.is_test == args.test):
         for field_name, field in fields.iteritems():
             if getattr(document, field_name) is None:
                 continue
@@ -40,8 +44,8 @@ if __name__ == '__main__':
     #For each field, compute features, scores, and values for candidates.
     for field_name, field in fields.iteritems():
         features = field.features_dataframe(candidates[field_name])
-        features.to_csv(path.join(csv_directory, '%s_training_features.%s.csv'
-                                  % (field_name, token)), encoding='utf-8')
+        features.to_csv(path.join(csv_directory, '%s_%s_features.%s.csv'
+                                  % (field_name, dataset, token)), encoding='utf-8')
 
         col_name = "%s_score" % field_name
         scores = {}
@@ -54,8 +58,8 @@ if __name__ == '__main__':
 
         score_df = pd.DataFrame({col_name: scores}).sort_index()
         score_df.index.names = features.index.names
-        score_df.to_csv(path.join(csv_directory, '%s_training_scores.%s.csv'
-                                  % (field_name, token)), encoding='utf-8')
+        score_df.to_csv(path.join(csv_directory, '%s_%s_scores.%s.csv'
+                                  % (field_name, dataset, token)), encoding='utf-8')
 
         col_name = "%s_value" % field_name
         texts = {}
@@ -66,7 +70,7 @@ if __name__ == '__main__':
 
         value_df = pd.DataFrame({col_name: texts}).sort_index()
         value_df.index.names = features.index.names
-        value_df.to_csv(path.join(csv_directory, '%s_training_value.%s.csv'
-                                  % (field_name, token)), encoding='utf-8')
+        value_df.to_csv(path.join(csv_directory, '%s_%s_value.%s.csv'
+                                  % (field_name, dataset, token)), encoding='utf-8')
 
     print("Candidates exported. Token: %s" % token)
