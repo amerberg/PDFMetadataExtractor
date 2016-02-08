@@ -89,6 +89,7 @@ class HumanNameField(Field):
         try:
             name = " ".join([result.group(2), result.group(1)])
         except AttributeError:
+            name = ""
             #Maybe OCR missed a comma...
             words = text.split(" ")
             if len(words) == 3 and len(words[2].strip('.,')) == 1:
@@ -97,9 +98,12 @@ class HumanNameField(Field):
             elif len(words) == 2 and self._is_first_name(words[1]) and\
                     not self._is_first_name(words[0]):
                 name = " ".join([words[1], words[0]])
-            elif len(words) == 1:
+            #If there were spaces between all the letters, collapse and try to separate.
+            if max([len(w) for w in words]) == 1:
+                words = ["".join(words)]
+            if len(words) == 1:
                 name = self._break_single_name(words[0])
-            else:
+            elif name == "":
                 # Assume it's just a name in "Firstname Lastname" format
                 name = text
         #Maintain case unless it's all-caps
