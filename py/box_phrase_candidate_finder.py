@@ -36,12 +36,13 @@ class BoxPhraseCandidateFinder(CandidateFinder):
         CandidateFinder.__init__(self, field, fid)
 
     def _boxes_in_bbox(self, document):
-        """"Get all boxes in the bounding box for this document"""
+        """"Get all boxes in the bounding box with acceptable dimensions"""
         bbox = self._bbox
         boxes = document.get_boxes()
         return [box for box in boxes if bbox[0] <= box.x0 and
                 box.x1 <= bbox[2] and bbox[1] <= box.y0 and
-                box.y1 <= bbox[3] and self._allowed_page(box)]
+                box.y1 <= bbox[3] and self._allowed_page(box) and
+                self._acceptable_dimensions(box)]
 
     def _allowed_page(self, box):
         """Determine whether a given box is on a page within search bounds."""
@@ -58,6 +59,11 @@ class BoxPhraseCandidateFinder(CandidateFinder):
             if re.search(pattern, line.text) is not None:
                 return True
         return False
+
+    def _acceptable_dimensions(self, box):
+        """Check whether a box falls within the allowed height and width"""
+        return self._min_width < box.x1-box.x0 < self._max_width and\
+               self._min_height < box.y1-box.y0 < self._max_height
 
     def get_candidates(self, document):
         """Get all candidates for a document."""
