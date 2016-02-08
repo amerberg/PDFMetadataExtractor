@@ -104,22 +104,19 @@ class Field:
         return df
 
     def _check_model(self):
-        if "model_definition" in self['data']:
+        if "model_definition" in self._data:
             import pickle
             directory = self.settings.get_directory('pickle')
-            model_file = self['data']['model_definition'] + ".pkl"
+            model_file = self._data['model_definition'] + ".pkl"
             with open(os.path.join(directory, model_file)) as f:
                 self._model = pickle.load(f)
 
     def predict(self, document):
         self._check_model()
-        if self._model is not None:
+        try:
             return self._model.predict([document])
-        else:
+        except AttributeError:
             try:
                 return self.get_candidates(document)[0].value
             except KeyError:
                 return None
-
-
-
