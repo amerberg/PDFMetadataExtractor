@@ -36,11 +36,10 @@ if __name__ == "__main__":
     settings.map_tables()
     session = settings.session()
 
-    csv_dir = settings.get_directory('csv')
-
     #Attempt to preload candidate data from CSV files.
     if model_def['token']:
         token = model_def['token']
+        csv_dir = settings.get_directory('csv')
         features = pd.read_csv(os.path.join(csv_dir, '%s_training_features.%s.csv'
                                             % (field_name, token)), index_col=range(3))
         scores = pd.read_csv(os.path.join(csv_dir, '%s_training_scores.%s.csv'
@@ -48,21 +47,24 @@ if __name__ == "__main__":
         values = pd.read_csv(os.path.join(csv_dir, '%s_training_value.%s.csv'
                                           % (field_name, token)), index_col=range(3))['%s_value'%field_name]
 
-        for document in session.query(Document).options(joinedload(Document.lines))\
-                    .filter(Document.is_test == 0):
-                y.append(getattr(document, field_name))
-                # Delete the field value from X to prevent cheating.
-                delattr(document, field_name)
-                X.append(document)
-                try:
-                    document.features = {field_name: features.xs(document.id, level='document', drop_level=False)}
-                    document.scores = {field_name: scores.xs(document.id, level='document', drop_level=False)}
-                    document.values = {field_name: values.xs(document.id, level='document', drop_level=False)}
-                except KeyError as e:
-                    #Nothing found, but set them to empty to avoid trying to compute again later.
-                    document.features = {field_name: []}
-                    document.scores = {field_name: []}
-                    document.values = {field_name: []}
+
+    for document in session.query(Document).options(joinedload(Document.lines))\
+            .filter(Document.is_test == 0):
+        y.append(getattr(document, field_name))
+        # Delete the field value from X to prevent cheating.
+        delattr(document, field_name)
+        X.append(document)
+
+        if token:
+            try:
+                document.features = {field_name: features.xs(document.id, level='document', drop_level=False)}
+                document.scores = {field_name: scores.xs(document.id, level='document', drop_level=False)}
+                document.values = {field_name: values.xs(document.id, level='document', drop_level=False)}
+            except KeyError as e:
+                #Nothing found, but set them to empty to avoid trying to compute again later.
+                document.features = {field_name: []}
+                document.scores = {field_name: []}
+                document.values = {field_name: []}
 
     #Set up grid search cross-validation and fit the model.
     gs = GridSearchCV(wrapper, param_grid=model_def['parameter_grid'],
@@ -70,11 +72,13 @@ if __name__ == "__main__":
     gs.fit(X, y)
 
     #Dump the best estimator to a pickle file.
-    with open(os.path.join(settings.get_directory('pickle'), '%s.pkl' % args.model_file), 'w') as f:
+    dest = os.path.join(settings.get_directory('pickle'), '%s.pkl' % args.model_file)
+    with open(dest, 'w') as f:
         pickle.dump(gs.best_estimator_, f)
 
     #Print some things.
-    print gs.grid_scores_
-    print gs.best_params_
-    print gs.best_score_
+    print(gs.grid_scores_)
+    print(gs.best_params_)
+    print(gs.best_score_)
+    print("Best estimator saved to %s" % os.path.abspath(dest))
 
