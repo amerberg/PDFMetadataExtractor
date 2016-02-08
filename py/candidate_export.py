@@ -15,7 +15,7 @@ if __name__ == '__main__':
     parser.add_argument('--fields', help='the fields to generate data for',
                         nargs='*', default=None)
     parser.add_argument('--test', help='flag indicating that test set should be used',
-                        action='store_true', default=None)
+                        action='store_true', default=False)
     args = parser.parse_args()
 
     settings = Settings(args.settings)
