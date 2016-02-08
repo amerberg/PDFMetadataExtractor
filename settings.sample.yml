@@ -46,6 +46,7 @@ fields:
     class: HumanNameField
     labels: ['Patient Name', 'Patient name', 'Patient:', 'Patient', 'Name:', 'Name', 'Encounters For']
     multiple: False
+    model_definition: randomforest.yaml
     parameters:
       first_name_list: name_list.txt
     candidate_finders:

@@ -1,8 +1,8 @@
-import collections
 import importlib
 import abc
 import re
 import pandas as pd
+import os
 
 
 class Field:
@@ -102,3 +102,24 @@ class Field:
         if len(df) > 0:
             df.index.names = ['document', 'finder', 'num']
         return df
+
+    def _check_model(self):
+        if "model_definition" in self['data']:
+            import pickle
+            directory = self.settings.get_directory('pickle')
+            model_file = self['data']['model_definition'] + ".pkl"
+            with open(os.path.join(directory, model_file)) as f:
+                self._model = pickle.load(f)
+
+    def predict(self, document):
+        self._check_model()
+        if self._model is not None:
+            return self._model.predict([document])
+        else:
+            try:
+                return self.get_candidates(document)[0].value
+            except KeyError:
+                return None
+
+
+
