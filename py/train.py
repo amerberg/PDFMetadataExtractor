@@ -15,6 +15,8 @@ if __name__ == "__main__":
                         default=None)
     parser.add_argument('--settings', help='the path to the settings file',
                         default=None)
+    parser.add_argument('--token', help='a token for exported data',
+                        default=None)
     args = parser.parse_args()
 
     settings = Settings(args.settings)
@@ -35,10 +37,10 @@ if __name__ == "__main__":
 
     settings.map_tables()
     session = settings.session()
+    token = args.token
 
     #Attempt to preload candidate data from CSV files.
-    if model_def['token']:
-        token = model_def['token']
+    if token:
         csv_dir = settings.get_directory('csv')
         features = pd.read_csv(os.path.join(csv_dir, '%s_training_features.%s.csv'
                                             % (field_name, token)), index_col=range(3))
