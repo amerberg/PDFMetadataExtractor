@@ -13,7 +13,8 @@ class ModelWrapper(BaseEstimator):
     """
 
     def __init__(self, field, threshold=1,
-                 model_module="", model_class="", model_params={}):
+                 model_module="", model_class="", model_params={},
+                 use_probability=False):
         """Set the field, threshold and model.
 
 
@@ -30,6 +31,7 @@ class ModelWrapper(BaseEstimator):
         self.model_class = model_class
         self.model_module = model_module
         self.model_params = model_params
+        self._use_probability = use_probability
 
 
     def get_features(self, X):
@@ -131,7 +133,8 @@ class ModelWrapper(BaseEstimator):
     def predict(self, X):
         """Predict candidate scores and guess the highest-scoring one."""
         features = self.get_features(X)
-        pred_scores = self.model_.predict(features)
+        method = self._model.predict_proba if self._use_probability else self.model_.predict
+        pred_scores = method(features)
         pred_scores = pd.Series(pred_scores, index=features.index)
         y = []
         value = self.get_values(X)
