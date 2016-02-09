@@ -118,5 +118,5 @@ class Field:
         except AttributeError:
             try:
                 return self.get_candidates(document)[0].value
-            except KeyError:
+            except IndexError:
                 return None
