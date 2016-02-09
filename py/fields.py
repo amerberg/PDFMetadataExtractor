@@ -63,6 +63,9 @@ class DateField(Field):
                     d = date(year=d.year-100, month=d.month, day=d.day)
                 return d
 
+    def compare(self, date1, date2):
+        return str(date1) == str(date2)
+
 
 class HumanNameField(Field):
     """ A field class for human names."""
