@@ -68,5 +68,40 @@ Each key in the file should be a filename and values should be hashes of field_n
 Running `python py/setup.py` will extract the PDF data to the database.
 This may take a long time with a lot of files, but the extraction can be safely interrupted and restarted without causing any problems.
 
+After setup, models can be defined and trained.
+Models are defined in YAML files saved in the `model_definition` directory specified in the settings file.
+A model should be a regressor that will predict match scores for candidates based on the field's features.
+A model definition should include the following keys:
 
-More details will be provided very soon.
+-   `field` : the name of the field to be predicted by this model
+-   `module`: the module defining the regressor
+-   `class`: the name of the regressor class
+-   `threshold`: the threshold which a match score must exceed to be counted toward
+-   `parameters`: parameters to be passed to the model's constructor
+-   `parameter_grid`: the parameter grid to be passed to `sklearn.grid_search.GridSearchCV`
+-   `folds`: the number of folds to use in cross-validation
+
+After a model is defined, it can be trained by
+
+    cd <project_directory>/py
+    python train.py <model_definition_filename>
+    
+Upon running this script, the model will be cross-validated on the parameter grid, and the best estimator will be saved to the pickle directory.
+
+To save time, candidate data can first be computed and exported using the `candidate_export.py` script.
+That script will save relevant data to files in the CSV directory and output a token.
+Passing this token to `train.py` with the `--token` flag will use the exported data instead of finding candidates and computing features again.
+
+A model can be tested on the reserved test set using the `test.py` script.
+
+Once a model has been selected, adding the `model_definition` key to the field in the settings file will allow the model to be used by calling the field's `predict` method.
+
+
+##Requirements
+
+- Python 2.7
+- PDFMiner
+- SQLAlchemy with at least one working database engine
+- scikit learn, numpy, pandas
+- fuzzywuzzy
+- dateutil
