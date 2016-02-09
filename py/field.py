@@ -5,7 +5,7 @@ import pandas as pd
 import os
 
 
-class Field:
+class Field(object):
     """The base class for metadata field types.
 
     This class must be extended to provide functionality for specific datatypes.
