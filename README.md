@@ -100,7 +100,8 @@ Once a model has been selected, adding the `model_definition` key to the field i
 
 
 ##Extending
-`PDFMetadataExtractor` can be extended in the following ways.
+`PDFMetadataExtractor` is modular and extensible.
+It can be extended in the following ways.
 ###Field types
 A field type defines various properties of a metadata field, including how it will be extracted from a string of text and how it will be stored.
 Currently, two field type classes are defined in `py/fields.py` for handling dates and human names.
