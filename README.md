@@ -80,6 +80,7 @@ A model definition should include the following keys:
 -   `parameters`: parameters to be passed to the model's constructor
 -   `parameter_grid`: the parameter grid to be passed to `sklearn.grid_search.GridSearchCV`
 -   `folds`: the number of folds to use in cross-validation
+-   `use_probability`: for a field type whose `compare` method returns a Boolean value, setting this flag to `True` allows using a classifier with the `predict_proba` method for predictions instead of a regressor. 
 
 After a model is defined, it can be trained by
 
@@ -95,6 +96,9 @@ Passing this token to `train.py` with the `--token` flag will use the exported d
 A model can be tested on the reserved test set using the `test.py` script.
 
 Once a model has been selected, adding the `model_definition` key to the field in the settings file will allow the model to be used by calling the field's `predict` method.
+
+
+##Extending
 
 
 ##Requirements
