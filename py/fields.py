@@ -32,7 +32,8 @@ class DateField(Field):
         if not re.search(r"[A-Z][a-z]{2}", text):
             text = re.sub(r"\s+", "", text)
         # Sometimes we get extra punctuation from scanner noise.
-        preprocessed = str(text).translate(None, r",.'`")
+        #TODO: figure out how to do this with str.translate (faster than re.sub)
+        preprocessed = re.sub(r"[,.'`]+", "", text)
         return preprocessed
 
     def get_value(self, text):
