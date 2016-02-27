@@ -99,7 +99,34 @@ Once a model has been selected, adding the `model_definition` key to the field i
 
 
 ##Extending
+`PDFMetadataExtractor` can be extended in the following ways.
+###Field types
+A field type defines various properties of a metadata field, including how it will be extracted from a string of text and how it will be stored.
+Currently, two field type classes are defined in `py/fields.py` for handling dates and human names.
+ 
+To define a new field type, you will need to extend the `Field` class which is defined in `py/field.py`.
+A field type object should have (at least) the following attributes:
 
+- `col_type`: a SQLAlchemy column type for storing values in the database
+- `patterns`: a list of regular expressions to be used to identify field values (may be omitted if the `find_value` method is overridden)
+
+There are also several methods in the extraction workflow which may be overridden.
+To clarify these, it will be useful to explain the candidate extraction workflow.
+Once a candidate finder has identified a candidate string for the field `field` (usually by contextual clues), it calls `field.find_value` to identify a substring which "looks" like a value of `field`.
+The default implementation of the `find_value` method simply looks for a substring matching a pattern in `field.patterns`.
+Matching substrings are then passed (along with the containing `pdf_classes.Line` object) to the `Candidate` constructor.
+The `Candidate` constructor calls the `field.preprocess` method which performs any necessary cleaning and then the `field.get_value` method which converts the string to its final formatted form.
+Both of these methods have default implementations which leave the text unchanged, but these can be overridden.
+For example, the `DateField` class has a `preprocess` method which removes some punctuation characters (which are usually just noise) and corrects some common OCR errors as well as a `get_value` method which converts a textual date to a `datetime.date` object.
+
+Finally, `Field.compare` method is used for comparing two possibly different values for a field and should return a value between 0 and 1 (inclusive), with larger values indicating more similar values.
+By default, it simply tests two values for equality.
+It is often useful to override this method.
+The `HumanName` class, for instance, uses a similarity score based on the Levenshtein distance.
+
+###Candidate Finders
+
+###Features
 
 ##Requirements
 
