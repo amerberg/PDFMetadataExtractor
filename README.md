@@ -125,9 +125,20 @@ It is often useful to override this method.
 The `HumanName` class, for instance, uses a similarity score based on the Levenshtein distance.
 
 ###Candidate Finders
+Out of the box, `PDFMetadataExtractor` includes two candidate finders, `LabelCandidateFinder` (defined in `py/label_candidate_finder.py`) and `BoxPhraseCandidateFinder` (defined in `py/box_phrase_candidate_finder.py`).
+Additional candidate finders can be defined by extending the `CandidateFinder` class defined in `py/candidate.py`.
+
+A candidate finder should define the `get_candidates` method, which returns a list of all candidates in a `pdf_classes.Document` object.
+Note that to construct candidates `get_candidates` method must call the field's `find_value` method, as this is not done in the candidate constructor.
+
+Sometimes it may be useful to extend the `Candidate` class so that a candidate may find candidates which carry additional information that may be utilized for feature computation.
+For instance, the file `py/label_candidate_finder.py` defines a `LabelCandidate` class which stores information about the offset between the candidate and its label text.
 
 ###Features
-
+There are many features defined in `py/features.py`. To define a new feature, one should extend the `Feature` class defined in `py/feature.py`.
+At a minimum, a feature class should implement the `compute` method, which takes a dictionary of candidates and returns a dictionary of feature values.
+If a feature takes parameters, these can be set by overriding the constructor `Feature.__init__`.
+ 
 ##Requirements
 
 - Python 2.7
