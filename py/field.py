@@ -48,15 +48,6 @@ class Field(object):
         """Return all candidates identified by all of the candidate finders"""
         return sum([finder.get_candidates(document) for finder in self._candidate_finders.values()], [])
 
-    @abc.abstractmethod
-    def patterns(self):
-        """Abstract method returns a list of patterns that match field values."""
-        return self.patterns
-
-    def col_type(self):
-        """Return the database column type to be used to represent this field."""
-        return self._col_type
-
     def preprocess(self, text):
         """Preprocess a string before looking for a value."""
         return text
