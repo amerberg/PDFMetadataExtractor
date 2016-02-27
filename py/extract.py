@@ -6,13 +6,15 @@ from pdfminer.converter import PDFPageAggregator
 from pdfminer.layout import LAParams, LTTextBox, LTTextLine
 from pdfminer.layout import LTTextLineVertical, LTTextBoxVertical
 
+from random import random
+
 from pdf_classes import *
 
 import re
 import os
 
 
-def extract_pdf_data(fp, labels={}, session=None):
+def extract_pdf_data(fp, test_proportion=0, labels={}, session=None):
     """ Get PDF data from a file.
 
     TODO why is this a standalone function?
@@ -33,14 +35,14 @@ def extract_pdf_data(fp, labels={}, session=None):
     interpreter = PDFPageInterpreter(rsrcmgr, device)
 
     pages = PDFPage.create_pages(pdf)
-    document = Document(filename=filename)
+    document = Document(filename=filename, is_test=random() < test_proportion)
     for key in labels:
         setattr(document, key, labels[key])
     if session:
         session.add(document)
 
     for i, page in enumerate(pages):
-        # TODO: figure out how to get the number of pages directly from pages
+        # TODO: figure out how to get the number of pages directly from pages object
         document.num_pages = i+1
         interpreter.process_page(page)
         layout = device.get_result()

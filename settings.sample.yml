@@ -17,6 +17,8 @@ directories:
 files:
   label: labels.json
 
+test_proportion: 0.2
+
 substitutions:
   a: [e, o, s]
   b: [h, lo, la]

@@ -33,8 +33,11 @@ if __name__ == "__main__":
 
                 try:
                     with open(os.path.join(pdf_dir, filename), "r") as fp:
-                        extract_pdf_data(fp, file_labels, session)
+                        extract_pdf_data(fp, settings.test_proportion, file_labels, session)
                 except Exception as e:
                     session.rollback()
                     print (filename, e)
+
+
+        #query=Document.update().values(Document.is_test=1)
 

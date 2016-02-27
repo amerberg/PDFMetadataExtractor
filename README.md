@@ -26,6 +26,7 @@ A field is represented by a hash (dictionary) containing the following keys:
 +   `labels` - A list of labels that might be used to label this field.
 +   `candidate_finders` - A hash of candidate finder definitions, explained in more detail below.
 +   `features` - A hash of feature definitions, explained in more detail below.
++   `test_proportion` - the proportion of documents to be withheld as test data.
     
 A candidate finder is defined by a hash with the following keys:
 

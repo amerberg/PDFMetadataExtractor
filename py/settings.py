@@ -30,6 +30,7 @@ class Settings:
         self._set_files()
         self._set_directories()
         self._extra_labels = self._data['extra_labels']
+        self.test_proportion = self._data['test_proportion']
 
     def _load_from_file(self):
         """Load the settings from the given filename."""
