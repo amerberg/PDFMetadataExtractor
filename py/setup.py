@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
         for filename in os.listdir(pdf_dir):
             if filename not in existing:
-                file_labels = labels[filename] if filename in labels else {}
+                file_labels = labels.get(filename, {})
 
                 try:
                     with open(os.path.join(pdf_dir, filename), "r") as fp:

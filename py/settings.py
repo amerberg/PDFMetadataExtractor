@@ -105,7 +105,7 @@ class Settings:
                 module = importlib.import_module(info['module'])
                 cls = info['class']
                 func = getattr(module, cls)
-                params = info['parameters'] if 'parameters' in info else {}
+                params = info.get('parameters', {})
                 self.fields[name] = func(self, name, info, **params)
 
     def load_labels(self):

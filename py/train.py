@@ -27,9 +27,9 @@ if __name__ == "__main__":
     field_name = model_def['field']
     field = settings.fields[field_name]
 
-    parameters = model_def['parameters'] if "parameters" in model_def else {}
-    n_jobs = model_def['n_jobs'] if "n_jobs" in model_def else 1
-    use_probability = model_def['use_probability'] if 'use_probability' in model_def else False
+    parameters = model_def.get('parameters', {})
+    n_jobs = model_def.get('n_jobs', 1)
+    use_probability = model_def.get('use_probability', False)
 
     wrapper = estimators.ModelWrapper(field, model_def['threshold'], model_def['module'],
                                       model_def['class'], model_params=parameters,

@@ -17,7 +17,7 @@ class Field(object):
         """Set basic field properties."""
         self.name = name
         self.settings = settings
-        self.labels = data['labels'] if 'labels' in data else []
+        self.labels = data.get('labels', [])
         self._data = data
         self._load_features()
         self._load_candidate_finders()
@@ -29,7 +29,7 @@ class Field(object):
         for name, info in infos.iteritems():
             module = importlib.import_module(info['module'])
             cls = info['class']
-            params = info['parameters'] if 'parameters' in info else {}
+            params = info.get('parameters', {})
             func = getattr(module, cls)
             self.features[name] = func(self, **params)
 
