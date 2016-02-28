@@ -1,8 +1,9 @@
 class Document(object):
     """Class that represents a single PDF document."""
-    def __init__(self, filename='', num_pages=1):
+    def __init__(self, filename='', num_pages=1, is_test=False):
         self.filename = filename
         self.num_pages = num_pages
+        self.is_test = is_test
         self._boxes = []
         self._lines = []
 
