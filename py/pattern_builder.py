@@ -36,12 +36,12 @@ class PatternBuilder(object):
 
     def list_pattern(self, strings):
         """Get a pattern to match one string in a list"""
+        #TODO: We really want a frozenset, not a list
         try:
-            # TODO: not the best way to hash a list of strings, but it works for now
-            key = "$".join(strings)
+            key = frozenset(strings)
             return self._list_patterns[key]
         except KeyError:
-            strings = set(strings + [string.upper() for string in strings])
+            strings = frozenset(strings + [string.upper() for string in strings])
             self._list_patterns[key] = "|".join(["(?:" + self.string_pattern(string) + ")"
                 for string in strings])
             return self._list_patterns[key]
