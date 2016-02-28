@@ -100,7 +100,7 @@ Once a model has been selected, adding the `model_definition` key to the field i
 
 
 ##Extending
-`PDFMetadataExtractor` is modular and extensible.
+`PDFMetadataExtractor` is modular and flexible.
 It can be extended in the following ways.
 ###Field types
 A field type defines various properties of a metadata field, including how it will be extracted from a string of text and how it will be stored.
